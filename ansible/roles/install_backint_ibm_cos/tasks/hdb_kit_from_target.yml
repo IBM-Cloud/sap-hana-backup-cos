@@ -1,0 +1,43 @@
+---
+# Case 1.1: During SAP HANA installation on the target VSI, SAP HANA kit is on target VM and backint agent kit version is the required one
+- name: Check if the backup agent kit {{ backint_agent_path_in_installed_hana_kit }}/{{ backint_file_pattern }} exists in the kit for SAP HANA installation on target VSI
+  ansible.builtin.find:
+    path: "{{ backint_agent_path_in_installed_hana_kit }}"
+    patterns: "{{ backint_file_pattern }}"
+    file_type: "file"
+    use_regex: yes
+  register: check_bk_agent_kit_target
+  failed_when: check_bk_agent_kit_target['matched'] == 0
+
+- name: Get the backint short file name
+  set_fact:
+    backint_kit_short_target: "{{ check_bk_agent_kit_target['files'][0]['path'] | basename }}"
+
+- name: Check the version of backup agent kit file from SAP HANA kit
+  set_fact:
+    correct_kit: "{{ check_bk_agent_kit_target['files'][0]['path'] }}"
+  when: backint_kit_short_target is defined and ([backint_kit_short_target, "ge", minimum_required_vers_backint_ibm_cos] | list | compare_versions) | bool
+  failed_when: correct_kit is not defined
+
+- name: Check if the directory for backup agent kit exists on target VSI
+  stat:
+    path: "{{ target_kit_path }}"
+  register: exist_status
+
+- name: Create the directory for backup agent kit on target VSI
+  file:
+    path: "{{ target_kit_path }}"
+    state: directory
+    recurse: yes
+    mode: '0755'
+  when: not exist_status.stat.exists
+
+- name: Copy the backup agent kit from {{ backint_agent_path_in_installed_hana_kit }} to {{ target_kit_path }} and unpack it
+  unarchive:
+    dest: "{{ target_kit_path }}"
+    src: "{{ correct_kit }}"
+    exclude:
+      - python_script_name
+      - hdbbackint_file_name
+    remote_src: true
+...

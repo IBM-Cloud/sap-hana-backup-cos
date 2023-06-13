@@ -1,0 +1,134 @@
+---
+- name: Import variables
+  hosts: "{{ crt_hosts }}"
+  gather_facts: yes
+  vars_files:
+    - "saphana-vars.yml"
+    - "infra-vars.yml"
+  
+  pre_tasks:
+   - name: Check the path to aws-s3-backint-.*-linuxx86_64 kit or a SAP HANA kit path containing the backint agent is provided
+     fail:
+       msg: >
+          The kit for backint agent (aws-s3-backint-.*-linuxx86_64) is missing. Please, provide the path to the kit, in 'backint_cos_kit' variable 
+          or a SAP HANA kit path containing the right backint agent version, in 'hana_kit_for_backint_cos'. The minimum supported backint version is 'aws-s3-backint-1.2.17-linuxx86_64'."
+     when: >
+       (hana_backup is defined and hana_backup == "Yes" or hana_backup is not defined) and
+       hana_kit_for_backint_cos == "" and backint_cos_kit == ""
+   
+   - name: Check the path to the Python script to create hdbbackint is provided
+     fail:
+       msg: "The Python script to create hdbbackint is missing. Please, provide the path to the script, in 'create_hdbbackint_script' variable."
+     when: >
+       (hana_backup is defined and hana_backup == "Yes" or hana_backup is not defined) and 
+       create_hdbbackint_script == ""
+  
+  tasks:
+    - name: Prerequisites for SAP HANA backup using backint and IBM COS
+      include_role:
+        name: prerequisites_hdb_ibmcos_backup
+      when: hana_backup is not defined
+      
+    - name: Ensure the required Python3 version is available on the target VSI
+      include_role: 
+        name: install_alternate_python
+      vars:
+        python3_required_version: "3.7"
+        python_version: "3.7.16"
+        python_kit_file: "Python-3.7.16.tgz"
+        python_url: "https://www.python.org/ftp/python/{{ python_version }}/{{ python_kit_file }}"
+        python_download_on_bastion: "yes"
+        temp_kit_dir: "{{ playbook_dir }}/kit"
+        python_download_path: "{{ temp_kit_dir }}/python"
+        python_target_destination: "/usr/src"
+        python_install_prerequisites:
+          linux:
+            - make
+            - wget
+            - gcc
+            - openssl-devel
+            - libffi-devel
+            - zlib-devel
+            - xz-devel
+          redhat:
+            - bzip2-devel
+          suse:
+            - bzip2
+            - readline-devel
+            - sqlite3-devel
+            - libbz2-devel 
+            - libopenssl-devel
+        when: hana_backup is defined and hana_backup == "Yes" or hana_backup is not defined
+
+    - name: Use the backint agent kit for SAP HANA backup in IBM COS, available on the target VM as part of SAP HANA kit
+      include_role: 
+        name: install_backint_ibm_cos
+        tasks_from: hdb_kit_from_target
+      vars:
+        minimum_required_vers_backint_ibm_cos: "aws-s3-backint-1.2.17-linuxx86_64"
+        backint_file_pattern: "aws-s3-backint-.*-linuxx86_64"
+        target_kit_path: "/hana/shared/{{ hana_sid | upper }}/backint_agent"
+        installed_hana_kit: "/usr/sap/kit"
+        backint_agent_path_in_installed_hana_kit: "{{ installed_hana_kit }}/DATA_UNITS/HDB_SERVER_LINUX_X86_64/server"
+        python_script_name: "{{ create_hdbbackint_script | basename }}"
+        hdbbackint_file_name: "hdbbackint"
+      when: hana_backup is defined and hana_backup == "Yes" and hana_kit_for_backint_cos == kit_saphana_file
+
+    - name: Use the backint agent kit for SAP HANA backup in IBM COS, available on Ansible controller
+      include_role: 
+        name: install_backint_ibm_cos
+        tasks_from: agent_kit_from_controller
+      vars:
+        minimum_required_vers_backint_ibm_cos: "aws-s3-backint-1.2.17-linuxx86_64"
+        backint_file_pattern: "aws-s3-backint-.*-linuxx86_64"
+        target_kit_path: "/hana/shared/{{ hana_sid | upper }}/backint_agent"
+        python_script_name: "{{ create_hdbbackint_script | basename }}"
+      when: >
+        (hana_backup is defined and hana_backup == "Yes" and backint_cos_kit != "") or
+        (hana_backup is not defined and backint_cos_kit != "")
+
+    - name: Use the SAP HANA kit containing the backint agent kit for SAP HANA backup in IBM COS, available on Ansible controller
+      include_role: 
+        name: install_backint_ibm_cos
+        tasks_from: hdb_kit_from_controller
+      vars:
+        temp_kit_dir: "{{ playbook_dir }}/kit"
+        backint_agent_kit_path_bastion: "{{ temp_kit_dir }}/hdb_backint_agent_ibm_cos"
+        minimum_required_vers_backint_ibm_cos: "aws-s3-backint-1.2.17-linuxx86_64"
+        backint_file_pattern: "aws-s3-backint-.*-linuxx86_64"
+        target_kit_path: "/hana/shared/{{ hana_sid | upper }}/backint_agent"
+        python_script_name: "{{ create_hdbbackint_script | basename }}"
+        hdbbackint_file_name: "hdbbackint"
+        backint_check_path: "{{ target_kit_path }}/aws-s3-backint/libs/ibm_s3transfer"
+      when: >
+        (hana_backup is defined and hana_backup == "Yes" and backint_cos_kit == "" and hana_kit_for_backint_cos != "" and hana_kit_for_backint_cos != kit_saphana_file) or
+        (hana_backup is not defined and backint_cos_kit == "" and hana_kit_for_backint_cos != "")
+    
+    - name: Backint paths and parameter configuration
+      include_role: 
+        name: conf_backint_path_and_params
+      vars:
+        python3_required_version: "3.7"
+        agent_directory: "/hana/shared/{{ hana_sid | upper }}/backint_agent/aws-s3-backint"
+        hdbbackint_file_name: "hdbbackint"
+      when: hana_backup is defined and hana_backup == "Yes" or hana_backup is not defined
+
+    - name: SAP HANA configuration for backint
+      include_role:
+        name: conf_hana_for_backint
+      vars:
+        agent_directory: "/hana/shared/{{ hana_sid | upper }}/backint_agent/aws-s3-backint"
+        hdbbackint_cfg_file_name: "hdbbackint.cfg"
+        backup_parameters:
+          data_backup_parameter_file: "{{ agent_directory }}/{{ hdbbackint_cfg_file_name }}"
+          log_backup_parameter_file: "{{ agent_directory }}/{{ hdbbackint_cfg_file_name }}"
+          log_backup_using_backint: "TRUE"
+          catalog_backup_parameter_file: "{{ agent_directory }}/{{ hdbbackint_cfg_file_name }}"
+          catalog_backup_using_backint: "TRUE"       
+      when: hana_backup is defined and hana_backup == "Yes" or hana_backup is not defined
+
+    - name: Initial SAP HANA data backup
+      include_role:
+        name: hana_backup_execution
+      when: hana_backup is defined and hana_backup == "Yes" or hana_backup is not defined
+...

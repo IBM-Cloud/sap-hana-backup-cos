@@ -1,0 +1,28 @@
+---
+- name: Detect the replication status
+  shell: "su - {{ hana_sid|lower }}adm -c 'hdbnsutil -sr_state --sapcontrol=1'"
+  args:
+    warn: false
+  register: repl_status_out
+  changed_when: False
+
+- name: The list of SAP HANA tenant databases where data backup should be executed
+  set_fact:
+    hana_tenant_list: "{{ hana_tenants.split(',') | list | upper }}"
+  when: repl_status_out.stdout.find('operation mode=primary') != -1 or repl_status_out.stdout.find('mode=none') != -1
+
+- name: The list of all SAP HANA databases where data backup should be executed
+  set_fact:
+    db_list: "{{ hana_tenant_list + [ 'SYSTEMDB' ] }}"
+  when: hana_tenant_list is defined
+
+- name: Execute the initial data backup of SAP HANA SYSTEM and TENANT databases backup to IBM Cloud Object Storage
+  shell: su - {{ hana_sid|lower }}adm -c "hdbsql -d {{ db }} -u SYSTEM -p \"{{ hana_main_password }}\" -i {{ hana_sysno }} \"BACKUP DATA USING BACKINT ('Initial_BACKUP_{{ db }}')\""
+  args:
+    warn: false
+  loop: "{{ db_list }}"
+  loop_control:
+    loop_var: db
+  when: db_list is defined
+  no_log: True
+...

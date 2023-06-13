@@ -1,0 +1,6 @@
+---
+- name: SAP HANA NON-HA Backup using backint and IBM COS
+  ansible.builtin.import_playbook: hana_backup.yml
+  vars:
+    crt_hosts: db_private_ip_1
+...

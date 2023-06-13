@@ -1,0 +1,38 @@
+---
+- name: Get the short name of the Python script file
+  set_fact: 
+    python_script_short: "{{ create_hdbbackint_script | basename }}"
+
+- name: Copy the Python script {{ python_script_short }} to the target SAP HANA VSI
+  ansible.builtin.copy:
+    src: "{{ create_hdbbackint_script }}"
+    dest: "{{ agent_directory }}"
+    mode: "644"
+
+- name: Check for the status of the new hdbbackint file
+  stat:
+    path: "{{ agent_directory }}/{{ hdbbackint_file_name }}"
+  register: hdbbackint_exist_status
+
+- name: Run the Python script {{ python_script_short }} with Python3
+  shell: "python{{ python3_required_version }} {{ python_script_short }}"
+  args:
+    chdir: "{{ agent_directory }}"
+  register: create_hdbbackint_cmd
+  when: not hdbbackint_exist_status.stat.exists
+
+- name: Create {{ agent_directory }}/hdbbackint.cfg file
+  ansible.builtin.template:
+    src: hdbbackint.cfg
+    dest: "{{ agent_directory }}/hdbbackint.cfg"
+    mode: "644"
+
+- name: Create symbolic links from {{ agent_directory }}/{{ hdbbackint_file_name }} to /usr/sap/{{ hana_sid|upper }}/SYS/global/hdb/opt/{{ hdbbackint_file_name }}
+  file:
+    src: "{{ agent_directory }}/{{ hdbbackint_file_name }}"
+    dest: "/usr/sap/{{ hana_sid|upper }}/SYS/global/hdb/opt/{{ hdbbackint_file_name }}"
+    state: link
+  become: true
+  become_method: su
+  become_user: "{{ hana_sid|lower }}adm"
+...

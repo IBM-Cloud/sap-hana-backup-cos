@@ -1,0 +1,124 @@
+---
+- name: Get the installed Python3 version
+  command: "python{{ python3_required_version }} --version"
+  register: installed_python_cmd
+  failed_when: python3_required_version is not defined
+  changed_when: False
+
+- name: Create the download directory for the Python kit on Ansible controller server
+  ansible.builtin.file:
+    path: "{{ python_download_path }}"
+    state: directory
+    mode: "755"
+  when: (installed_python_cmd.rc != 0) and (python_download_on_bastion | lower | trim == "yes")
+  delegate_to: localhost
+
+- name: Register the status of the directory for downloading the Python kit on Ansible controller server
+  stat:
+    path: "{{ python_download_path }}"
+  when: python_download_on_bastion | lower | trim == "yes"
+  register: python_download_path_status
+  run_once: true
+  delegate_to: localhost
+
+- name: Download Python {{ python_version }} on Ansible controller
+  ansible.builtin.get_url:
+    url: "{{ python_url }}"
+    dest: "{{ python_download_path }}"
+  when: (python_download_path_status.stat.exists) and (python_download_on_bastion | lower | trim == "yes")
+  run_once: true
+  delegate_to: localhost
+
+- name: Download Python {{ python_version }} on target VSI
+  ansible.builtin.get_url:
+    url: "{{ python_url }}"
+    dest: "{{ python_target_destination }}"
+  when: (installed_python_cmd.rc != 0) and (python_download_on_bastion | lower | trim == "no")
+
+- name: Install prerequisites for building Python {{ python_version }} on Linux
+  package:
+    state: present
+    name: "{{ python_prereq }}"
+  loop: "{{ python_install_prerequisites.linux }}"
+  loop_control:
+    loop_var: python_prereq
+  when: installed_python_cmd.rc != 0
+
+- name: Install prerequisites for building Python {{ python_version }} on Red Hat
+  package:
+    state: present
+    name: "{{ python_prereq_rh }}"
+  loop: "{{ python_install_prerequisites.redhat }}"
+  loop_control:
+    loop_var: python_prereq_rh
+  when: installed_python_cmd.rc != 0 and ansible_facts['os_family'] == 'RedHat'
+
+- name: Install prerequisites for building Python {{ python_version }} on SLES
+  package:
+    state: present
+    name: "{{ python_prereq_su }}"
+  loop: "{{ python_install_prerequisites.suse }}"
+  loop_control:
+    loop_var: python_prereq_su
+  when: installed_python_cmd.rc != 0 and ansible_facts['os_family'] == 'Suse'
+
+- name: Copy the Python kit from Ansible controller to the target VSI and unpack it
+  unarchive:
+    dest: "{{ python_target_destination }}"
+    remote_src: "no"
+    src: "{{ python_download_path }}/{{ python_kit_file }}"
+  when: (installed_python_cmd.rc != 0) and (python_download_on_bastion | lower | trim == "yes")
+
+- name: Unpack the Python kit if it is already on the target VSI
+  unarchive:
+    dest: "{{ python_target_destination }}"
+    remote_src: "yes"
+    src: "{{ python_target_destination }}/{{ python_kit_file }}"
+  when: (installed_python_cmd.rc != 0) and (python_download_on_bastion | lower | trim == "no")
+
+- name: Get Python directory name
+  set_fact:
+    python_directory_name: "{{ python_kit_file.split('.tgz')[0] }}"
+
+- name: Run the configure script to check the system compatibilities and dependencies
+  shell: "./configure --enable-optimizations"
+  args:
+    chdir: "{{ python_target_destination }}/{{ python_directory_name }}"
+  register: configure_python_cmd
+  when: installed_python_cmd.rc != 0
+
+- name: Build Python {{ python_version }} using make command
+  shell: "make -j 8"
+  args:
+    chdir: "{{ python_target_destination }}/{{ python_directory_name }}"
+  register: build_python_cmd
+  when: installed_python_cmd.rc != 0 and configure_python_cmd.rc == 0
+
+- name: Install Python {{ python_version }} binaries
+  shell: "make altinstall"
+  args:
+    chdir: "{{ python_target_destination }}/{{ python_directory_name }}"
+  register: install_python_cmd
+  when: installed_python_cmd.rc != 0 and configure_python_cmd.rc == 0 and build_python_cmd.rc == 0
+
+- name: Register the latest status of the directory for downloading the Python kit on Ansible controller server
+  stat:
+    path: "{{ temp_kit_dir }}"
+  when: python_download_on_bastion | lower | trim == "yes"
+  register: python_download_path_latest_status
+  run_once: true
+  delegate_to: localhost
+
+- name: Cleanup Python kit from Ansible controller
+  file:
+    path: "{{ temp_kit_dir }}"
+    state: absent
+  when: python_download_path_latest_status.stat.exists
+  run_once: true
+  delegate_to: localhost
+
+- name: Cleanup Python kit from target VSI
+  file:
+    path: "{{ python_target_destination }}/{{ python_directory_name }}"
+    state: absent
+...

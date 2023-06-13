@@ -1,0 +1,100 @@
+---
+# SAP HANA kit is not on target VM or the backint agent kit found in SAP HANA kit has not the correct version
+# Case 1.2: The backint agent kit should be extracted from SAP HANA kit passed as input variable
+
+- name: Check the existence of the backup agent on target VSI
+  ansible.builtin.find:
+    paths: "{{ backint_check_path }}"
+    file_type: "directory"
+  register: target_backint_agent
+
+- name: Create the directory for the backup agent kit file on Ansible controller server
+  file:
+    path: "{{ backint_agent_kit_path_bastion }}"
+    state: directory
+    mode: '0755'
+  delegate_to: localhost
+  when: target_backint_agent['matched'] == 0
+
+- name: Check the existence of the backup agent kit file on Ansible controller server
+  ansible.builtin.find:
+    paths: "{{ backint_agent_kit_path_bastion }}"
+    patterns: "{{ backint_file_pattern }}"
+    file_type: "file"
+    use_regex: yes
+  register: bastion_backint_agent_kit
+  delegate_to: localhost
+  when: target_backint_agent['matched'] == 0
+
+- name: Extract the backup agent package from SAP HANA kit on Ansible controller server in {{ backint_agent_kit_path_bastion }}
+  shell: "unzip -o -j {{ hana_kit_for_backint_cos }} */aws-s3-backint-* -d {{ backint_agent_kit_path_bastion }}"
+  args:
+    warn: false
+  register: unzip_cmd
+  when: bastion_backint_agent_kit is not skipped and bastion_backint_agent_kit['matched'] == 0
+  failed_when: unzip_cmd.rc != 0
+  run_once: true
+  delegate_to: localhost
+
+- name: Get the backup agent package available on Ansible controller server
+  find:
+    paths: "{{ backint_agent_kit_path_bastion }}"
+    file_type: "file"
+    patterns: "{{ backint_file_pattern }}"
+    use_regex: yes
+  register: bk_agent_pkg
+  delegate_to: localhost
+  when: target_backint_agent['matched'] == 0
+
+- name: Get the short name of the backup agent package available on Ansible controller server
+  set_fact:
+    bk_agent_pkg_short: "{{ bk_agent_pkg['files'][0]['path'] | basename }}"
+  when: target_backint_agent['matched'] == 0 and bk_agent_pkg is not skipped
+  failed_when: bk_agent_pkg is skipped
+  delegate_to: localhost
+
+- name: Check if the backup agent package version from SAP HANA kit is higher equal to {{ minimum_required_vers_backint_ibm_cos }}
+  set_fact:
+    correct_kit: "{{ bk_agent_pkg['files'][0]['path'] }}"
+  failed_when: ([bk_agent_pkg_short, "ge", minimum_required_vers_backint_ibm_cos] | list | compare_versions) == false
+  delegate_to: localhost
+  when: target_backint_agent['matched'] == 0
+
+- name: Check if the directory for backup agent kit exists on target VSI
+  stat:
+    path: "{{ target_kit_path }}"
+  register: exist_status
+
+- name: Create the directory for backup agent kit on target VSI
+  file:
+    path: "{{ target_kit_path }}"
+    state: directory
+    recurse: yes
+    mode: '0755'
+  when: not exist_status.stat.exists
+
+- name: Copy the backup agent kit from {{ backint_agent_path_in_installed_hana_kit }} to {{ target_kit_path }} and unpack it
+  unarchive:
+    dest: "{{ target_kit_path }}"
+    src: "{{ correct_kit }}"
+    exclude:
+      - python_script_name
+      - hdbbackint_file_name
+    remote_src: false
+  when: target_backint_agent['matched'] == 0
+
+- name: Register the latest status of the directory of the backup agent kit from the Ansible controller server
+  stat:
+    path: "{{ temp_kit_dir }}"
+  register: temp_kit_dir_latest_status
+  delegate_to: localhost
+  run_once: true
+
+- name: Cleanup backup agent kit from the Ansible controller server
+  file:
+    path: "{{ temp_kit_dir }}"
+    state: absent
+  delegate_to: localhost
+  run_once: true
+  when: temp_kit_dir_latest_status.stat.exists
+...

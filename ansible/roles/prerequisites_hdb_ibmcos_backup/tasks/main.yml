@@ -1,0 +1,31 @@
+---
+- name: Register SAP HANA installation status
+  stat:
+    path: "/hana/shared/{{ hana_sid|upper }}/exe/linuxx86_64/hdb"
+  register: hdb_install_status
+
+- name: Fail if SAP HANA is not installed
+  fail:
+    msg: "SAP HANA is not installed!"
+  when: not hdb_install_status.stat.exists
+
+- name: Get the list of provided SAP HANA tenant databases
+  set_fact:
+    tenant_list: "{{ hana_tenants.split(',') | list | upper }}"
+
+- name: Create the list of SAP HANA configuration files for tenant databases
+  set_fact:
+    tenant_cfg_files: "{{ cfg_files_tenant|default([]) + ['/hana/shared/' ~ hana_sid|upper ~ '/global/hdb/custom/config/DB_' + ten_name + '/global.ini'] }}"
+  loop: "{{ tenant_list | list }}"
+  loop_control:
+    loop_var: ten_name
+
+- name: Validate SAP HANA tenant databases existence
+  stat:
+    path: "{{ ten_cfg_file }}"
+  register: found_res
+  failed_when: not found_res.stat.exists
+  loop: "{{ tenant_cfg_files | list }}"
+  loop_control:
+    loop_var: ten_cfg_file
+...

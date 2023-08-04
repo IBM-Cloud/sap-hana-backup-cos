@@ -2,8 +2,9 @@
 # General VPC variables:
 ##########################################################
 
-REGION = ""
-# Region for HANA VSI. Supported regions: https://cloud.ibm.com/docs/containers?topic=containers-regions-and-zones#zones-vpc
+REGION = ""  
+# Region for the VSI. Supported regions: https://cloud.ibm.com/docs/containers?topic=containers-regions-and-zones#zones-vpc
+# Edit the variable value with your deployment Region.
 # Example: REGION = "eu-de"
 
 VPC = ""
@@ -14,7 +15,7 @@ SECURITY_GROUP = ""
 # EXISTING Security group, previously created by the user in the same VPC and the same which was set for HANA VSI. The list of available Security Groups: https://cloud.ibm.com/vpc-ext/network/securityGroups
 # Example: SECURITY_GROUP = "ic4sap-securitygroup"
 
-RESOURCE_GROUP = ""
+RESOURCE_GROUP = "Default"
 # EXISTING Resource group, previously created by the user. The list of available Resource Groups: https://cloud.ibm.com/account/resource-groups
 # Example: RESOURCE_GROUP = "wes-automation"
 
@@ -22,11 +23,11 @@ SUBNET = ""
 # EXISTING Subnet in the same region and zone as HANA VSI, previously created by the user. The list of available Subnets: https://cloud.ibm.com/vpc-ext/network/subnets
 # Example: SUBNET = "ic4sap-subnet"
 
-ID_RSA_FILE_PATH = ""
-# id_rsa private key file path in OpenSSH format with 0600 permissions.
-# This private key is used only during the Terraform provisioning and it is recommended to be changed after the SAP deployment.
-# Default: "~/.ssh/id_rsa"
-# Example: ID_RSA_FILE_PATH = "/root/.ssh/id_rsa_backup"
+ID_RSA_FILE_PATH = "ansible/id_rsa"
+# Input your existing id_rsa private key file path in OpenSSH format with 0600 permissions.
+# This private key it is used only during the terraform provisioning and it is recommended to be changed after the SAP deployment.
+# It must contain the relative or absoute path from your Bastion.
+# Examples: "ansible/sap_hana_backup_cos" , "~/.ssh/sap_hana_backup_cos" , "/root/.ssh/id_rsa".
 
 ##########################################################
 # COS variables:
@@ -60,16 +61,16 @@ DB_HOSTNAME_2 = ""
 # SAP HANA backup configuration
 ##########################################################
 
-HANA_SID = ""
+HANA_SID = "HDB"
 # EXISTING SAP HANA system ID. Should follow the SAP rules for SID naming.
 # Obs. This will be used  also as identification number across different HA name resources. Duplicates are not allowed.
 # Example: HANA_SID = "HDB"
 
-HANA_SYSNO = ""
+HANA_SYSNO = "00"
 # EXISTING SAP HANA instance number. Should follow the SAP rules for instance number naming.
 # Example: HANA_SYSNO = "00"
 
-HANA_TENANTS = [""]
+HANA_TENANTS = ["HDB"]
 # A list of EXISTING SAP HANA tenant databases
 # Examples: HANA_TENANTS = ["HDB"] or HANA_TENANTS = ["Ten_HDB1", "Ten_HDB2", ..., "Ten_HDBn"]
 
@@ -88,7 +89,7 @@ HANA_KIT_FOR_BACKINT_COS = ""
 # Make sure the version of the contained backint agent kit is at least aws-s3-backint-1.2.17-linuxx86_64
 # Example: HANA_KIT_FOR_BACKINT_COS = "/storage/HANADB/51056441.ZIP"
 
-CREATE_HDBBACKINT_SCRIPT = ""
+CREATE_HDBBACKINT_SCRIPT = "/storage/hdb_backup_kit_files/python_script/create_hdbbackint.py"
 # The full path to the Python script provided by SAP (SAP note 2935898 - Install and Configure SAP HANA Backint Agent for Amazon S3) 
 # to modify the "hdbbackint" script so that it points to the Python 3 libraries
 # Example: CREATE_HDBBACKINT_SCRIPT = "/storage/hdb_backup_kit_files/python_script/create_hdbbackint.py"

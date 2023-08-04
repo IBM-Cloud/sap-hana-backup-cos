@@ -18,7 +18,7 @@ All data backup, log backup and catalog backup files are saved in the same dedic
 **Procedure**: Go to https://cloud.ibm.com/iam/users and select the USER_ID wich will run the automation and then check/grant the required roles. The results should look like bellow:  
 ![COS Roles](./cos_roles.png "COS Roles")
 
-- The kit of the backup agent for IBM COS `aws-s3-backint-.*-linuxx86_64.tar.gz` should be manually uploaded on the bastion server. This kit is part of SAP HANA kit file and can be found in `*/DATA_UNITS/HDB_SERVER_LINUX_X86_64/server` path. Either the entire SAP HANA kit or only the kit of the backup agent for IBM COS can be provided, but the the minimum backint agent kit version to be used is `aws-s3-backint-1.2.17-linuxx86_64`
+- The kit of the backup agent for IBM COS `aws-s3-backint-.*-linuxx86_64.tar.gz` should be manually uploaded on the bastion server. This kit is part of SAP HANA kit file and can be found in `*/DATA_UNITS/HDB_SERVER_LINUX_X86_64/server` path. Either the entire SAP HANA kit or only the kit of the backup agent for IBM COS can be provided, but the minimum backint agent kit version to be used is `aws-s3-backint-1.2.17-linuxx86_64`
 - The Python script `create_hdbbackint.py` provided by SAP (SAP note 2935898 - Install and Configure SAP HANA Backint Agent for Amazon S3) to modify the "hdbbackint" script so that it points to the Python 3 libraries should be manually uploaded on the bastion server.
 - The HANA DB SYSTEM user should have the same password for SYSTEMDB and all tenant databases
 
@@ -28,14 +28,14 @@ All data backup, log backup and catalog backup files are saved in the same dedic
 - [1.2 VPC and VSI Configuration](#12-vpc-and-vsi-configuration)
 - [1.3 Files description and structure](#13-files-description-and-structure)
 - [2.1 Executing the deployment of **SAP HANA Backup using Backint and IBM Cloud Object Storage** in CLI](#21-executing-the-deployment-of-sap-hana-backup-using-backint-and-ibm-cloud-object-storage-in-cli)
-- [2.2 Executing the deployment of **SAP HANA Backup using Backint and IBM Cloud Object Storage** in GUI (Schematics) - under development](#22-executing-the-deployment-of-sap-hana-backup-using-backint-and-ibm-cloud-object-storage-in-gui-schematics---under-development)
+- [2.2 Executing the deployment of **SAP HANA Backup using Backint and IBM Cloud Object Storage** in GUI (Schematics)](#22-executing-the-deployment-of-sap-hana-backup-using-backint-and-ibm-cloud-object-storage-in-gui-schematics)
 
 - [3.1 Related links](#31-related-links)
 
 ## 1.1 Installation media
 The SAP kit files required:
 - **aws-s3-backint-.*-linuxx86_64.tar.gz** - the kit of the backup agent for IBM COS, which should be manually uploaded on the bastion server. It is part of SAP HANA kit file and can be found in **\*/DATA_UNITS/HDB_SERVER_LINUX_X86_64/server** path. The entire SAP HANA kit can be provided instead, but in both cases, the the minimum backint agent kit version to be used is **aws-s3-backint-1.2.17-linuxx86_64**
-- **create_hdbbackint.py**, the Python script provided by SAP (SAP note 2935898 - Install and Configure SAP HANA Backint Agent for Amazon S3) whcih will be used to modify the "hdbbackint" script so that it points to the Python 3 libraries. It should be manually uploaded on the bastion server.
+- **create_hdbbackint.py**, the Python script provided by SAP (SAP note 2935898 - Install and Configure SAP HANA Backint Agent for Amazon S3) which will be used to modify the "hdbbackint" script so that it points to the Python 3 libraries. It should be manually uploaded on the bastion server.
 
 ## 1.2 VPC and VSI Configuration
 The solution will be applied on existing VSIs with SAP HANA solution already deployed on them, in an existing VPC.
@@ -53,12 +53,12 @@ See:
  - `ansible` - directory containing the Ansible playbooks used to install the necessary packages, make the backup configuration and execute the initial data backup.
  - `main.tf` - contains the configuration of the VSI for the deployment of the current SAP solution.
  - `data.tf` - it contains tf data from cloud resources
- - `output.tf` - contains the code for the information to be displayed after the VSI is created (VPC, Hostname, Private IP).
- - `integration*.tf & generate*.tf` files - contain the integration code that makes the SAP variabiles from Terraform available to Ansible.
+ - `output.tf` - contains the code for the information to be displayed after the SAP HANA Backup solution is deployed.  (BUCKET_NAME, COS_INSTANCE_NAME,  Private IP, Hostname, HANA_SID, HA_CLUSTER, REGION, VPC).
+ - `integration*.tf & generate*.tf` files - contain the integration code that makes the SAP variables from Terraform available to Ansible.
  - `provider.tf` - contains the IBM Cloud Provider data in order to run `terraform init` command.
  - `variables.tf` - contains variables for the VPC and VSI.
  - `versions.tf` - contains the minimum required versions for terraform and IBM Cloud provider.
- - `sch.auto.tfvars` - contains programatic variables - under development
+ - `sch.auto.tfvars` - contains programatic variables.
 
 ## 2.1 Executing the deployment of **SAP HANA Backup using Backint and IBM Cloud Object Storage** in CLI
 
@@ -80,41 +80,42 @@ Edit the file `input.auto.tfvars` and asign the appropriate values for: VPC, REG
 **IBM Cloud input parameters**
 
 ```shell
-#########################################################
+##########################################################
 # General VPC variables:
 ##########################################################
 
-REGION = "eu-de"
-# Region for HANA VSI. The COS will be created in the same region as HANA VSI. Supported regions: https://cloud.ibm.com/docs/containers?topic=containers-regions-and-zones#zones-vpc
+REGION = ""  
+# Region for the VSI. The COS will be created in the same region as HANA VSI. Supported regions: https://cloud.ibm.com/docs/containers?topic=containers-regions-and-zones#zones-vpc
+# Edit the variable value with your deployment Region.
 # Example: REGION = "eu-de"
 
-VPC = "ic4sap"
+VPC = ""
 # EXISTING VPC, previously created by the user in the same region as HANA VSI. The list of available VPCs: https://cloud.ibm.com/vpc-ext/network/vpcs
 # Example: VPC = "ic4sap"
 
-SECURITY_GROUP = "ic4sap-securitygroup"
+SECURITY_GROUP = ""
 # EXISTING Security group, previously created by the user in the same VPC and the same which was set for HANA VSI. The list of available Security Groups: https://cloud.ibm.com/vpc-ext/network/securityGroups
 # Example: SECURITY_GROUP = "ic4sap-securitygroup"
 
-RESOURCE_GROUP = "wes-automation"
+RESOURCE_GROUP = "Default"
 # EXISTING Resource group, previously created by the user. The list of available Resource Groups: https://cloud.ibm.com/account/resource-groups
 # Example: RESOURCE_GROUP = "wes-automation"
 
-SUBNET = "ic4sap-subnet"
+SUBNET = ""
 # EXISTING Subnet in the same region and zone as HANA VSI, previously created by the user. The list of available Subnets: https://cloud.ibm.com/vpc-ext/network/subnets
 # Example: SUBNET = "ic4sap-subnet"
 
-ID_RSA_FILE_PATH = "/root/.ssh/id_rsa_backup"
-# id_rsa private key file path in OpenSSH format with 0600 permissions.
-# This private key is used only during the Terraform provisioning and it is recommended to be changed after the SAP deployment.
-# Default: "~/.ssh/id_rsa"
-# Example: ID_RSA_FILE_PATH = "/root/.ssh/id_rsa_backup"
+ID_RSA_FILE_PATH = "ansible/id_rsa"
+# Input your existing id_rsa private key file path in OpenSSH format with 0600 permissions.
+# This private key it is used only during the terraform provisioning and it is recommended to be changed after the SAP deployment.
+# It must contain the relative or absoute path from your Bastion.
+# Examples: "ansible/sap_hana_backup_cos" , "~/.ssh/sap_hana_backup_cos" , "/root/.ssh/id_rsa".
 
 ##########################################################
 # COS variables:
 ##########################################################
 
-LIFECYCLE_POLICY = "60"
+LIFECYCLE_POLICY = ""
 # The number of retention days for HANA Database backup and Transaction LOG backup
 # Example: LIFECYCLE_POLICY = "120"
 
@@ -122,13 +123,13 @@ LIFECYCLE_POLICY = "60"
 # HANA VSI variables:
 ##########################################################
 
-HA_CLUSTER = "no"
+HA_CLUSTER = ""
 # Specify if High Availability is configured for HANA Database. Accepted values: yes/no
 # For the value "no" it is required that only one variable to be filled in: DB_HOSTNAME_1
 # For the value "yes" it is required that both next variables to be filled in: DB_HOSTNAME_1, DB_HOSTNAME_2
 # Example: HA_CLUSTER = "yes"
 
-DB_HOSTNAME_1 = "hanadb-vsi1"
+DB_HOSTNAME_1 = ""
 # The Hostname of an EXISTING HANA DB VSI. Required. The hostname should be up to 13 characters, as required by SAP
 # If High Availability is configured for HANA Database should be the hostname of HANA DB VSI 1.
 # Example: DB_HOSTNAME_1 = "hanadb-vsi1"
@@ -141,21 +142,22 @@ DB_HOSTNAME_2 = ""
 
 Parameter | Description
 ----------|------------
-IBM_CLOUD_API_KEY | IBM Cloud API key (Sensitive* value).
-ID_RSA_FILE_PATH | id_rsa private key file path in OpenSSH format with 0600 permissions. This private key is used only during the terraform provisioning and it is recommended to be changed after the SAP deployment. Default value: ID_RSA_FILE_PATH = ~/.ssh/id_rsa
-RESOURCE_GROUP | The name of an EXISTING Resource Group. <br /> Default value: "Default". The list of Resource Groups is available [here](https://cloud.ibm.com/account/resource-groups).
-REGION | The cloud region where HANA VSI was deployed. The COS will be created in the same region. <br /> The regions and zones for VPC are listed [here](https://cloud.ibm.com/docs/containers?topic=containers-regions-and-zones#zones-vpc). <br /> Review supported locations in IBM Cloud Schematics [here](https://cloud.ibm.com/docs/schematics?topic=schematics-locations).<br /> Sample value: eu-de.
+REGION | The cloud region where HANA VSI was deployed. The COS will be created in the same region as HANA VSI. <br /> The regions and zones for VPC are listed [here](https://cloud.ibm.com/docs/containers?topic=containers-regions-and-zones#zones-vpc). <br /> Review supported locations in IBM Cloud Schematics [here](https://cloud.ibm.com/docs/schematics?topic=schematics-locations).<br /> Sample value: eu-de.
 VPC | The name of an EXISTING VPC where HANA VSI was deployed. The list of VPCs is available [here](https://cloud.ibm.com/vpc-ext/network/vpcs)
-SUBNET | The name of an EXISTING Subnet, the same as for HANA VSI. The list of Subnets is available [here](https://cloud.ibm.com/vpc-ext/network/subnets).
 SECURITY_GROUP | The name of an EXISTING Security group, the same as for HANA VSI. The list of Security Groups is available [here](https://cloud.ibm.com/vpc-ext/network/securityGroups).
+RESOURCE_GROUP | The name of an EXISTING Resource Group for VSIs and Volumes resources.  The list of Resource Groups is available [here](https://cloud.ibm.com/account/resource-groups). <br /> Default value: "Default".
+SUBNET | The name of an EXISTING Subnet, the same as for HANA VSI. The list of Subnets is available [here](https://cloud.ibm.com/vpc-ext/network/subnets).
+ID_RSA_FILE_PATH | The file path for private_ssh_key will be automatically generated by default. If it is changed, it must contain the relative path from git repo folders. <br /> Default value: "ansible/id_rsa".
 LIFECYCLE_POLICY | The number of retention days for HANA Database backup and Transaction LOG backup.
 HA_CLUSTER | Specifies if High Availability is configured for HANA Database. Accepted values: yes/no. For the value "no" it is required that only one variable to be filled in: DB_HOSTNAME_1. For the value "yes" it is required that both next variables to be filled in: DB_HOSTNAME_1, DB_HOSTNAME_2
 DB_HOSTNAME_1 | The Hostname of an EXISTING HANA VSI. Required. If High Availability is configured for HANA Database should be the hostname of HANA DB VSI 1. The hostname should be up to 13 characters as required by SAP. For more information on rules regarding hostnames for SAP systems, check [SAP Note 611361: Hostnames of SAP ABAP Platform servers](https://launchpad.support.sap.com/#/notes/%20611361) 
 DB_HOSTNAME_2 | The Hostname of an EXISTING HANA VSI 2. Required only if High Availability is configured for HANA Database. The hostname should be up to 13 characters as required by SAP. For more information on rules regarding hostnames for SAP systems, check [SAP Note 611361: Hostnames of SAP ABAP Platform servers](https://launchpad.support.sap.com/#/notes/%20611361)
 
+
+
 **SAP input parameters**
 The solution is configured by asigning the appropriate values to the variables in `input.auto.tfvars` file.
-Edit the file `input.auto.tfvars` by replacing with the appropriate values for: HANA_SID, HANASYSNO, HANA_TENANTS, HANA_KIT_FOR_BACKINT_COS, BACKINT_COS_KIT, CREATE_HDBBACKINT_SCRIPT:
+Edit the file `input.auto.tfvars` by replacing with the appropriate values for: HANA_SID, HANA_SYSNO, HANA_TENANTS, HANA_KIT_FOR_BACKINT_COS, BACKINT_COS_KIT, CREATE_HDBBACKINT_SCRIPT:
 Asign the appropriate values for the SAP HANA system variables, that will be passed to the Ansible automation, as in the following example:
 
 ```shell
@@ -180,7 +182,7 @@ HANA_TENANTS = ["HDB"]
 # Kit Paths
 ##########################################################
 
-BACKINT_COS_KIT = "/storage/hdb_backup_kit_files/aws-s3-backint/aws-s3-backint-1.2.18-linuxx86_64.tar.gz"
+BACKINT_COS_KIT = ""
 # The full path to the backup agent for IBM COS kit. Mandatory only if HANA_KIT_FOR_BACKINT_COS is not provided. 
 # Make sure the version of the backint agent kit is at least aws-s3-backint-1.2.17-linuxx86_64
 # Example: BACKINT_COS_KIT = "/storage/hdb_backup_kit_files/aws-s3-backint/aws-s3-backint-1.2.18-linuxx86_64.tar.gz"
@@ -191,22 +193,22 @@ HANA_KIT_FOR_BACKINT_COS = ""
 # Make sure the version of the contained backint agent kit is at least aws-s3-backint-1.2.17-linuxx86_64
 # Example: HANA_KIT_FOR_BACKINT_COS = "/storage/HANADB/51056441.ZIP"
 
-CREATE_HDBBACKINT_SCRIPT = "/storage/hana_backup_kit_files/create_hdbbackint.py"
+CREATE_HDBBACKINT_SCRIPT = "/storage/hdb_backup_kit_files/python_script/create_hdbbackint.py"
 # The full path to the Python script provided by SAP (SAP note 2935898 - Install and Configure SAP HANA Backint Agent for Amazon S3) 
 # to modify the "hdbbackint" script so that it points to the Python 3 libraries
-# Example: CREATE_HDBBACKINT_SCRIPT = "/storage/hana_backup_kit_files/create_hdbbackint.py"
+# Example: CREATE_HDBBACKINT_SCRIPT = "/storage/hdb_backup_kit_files/python_script/create_hdbbackint.py"
 ```
 
 **SAP input parameters:**
 
-Parameter | Description | Requirements
+Parameter | Description | Requirements |
 ----------|-------------|-------------
-HANA_SID | EXISTING SAP HANA system ID. The SAP system ID identifies the SAP HANA system | <ul><li>Consists of exactly three alphanumeric characters</li><li>Has a letter for the first character</li><li>Does not include any of the reserved IDs listed in SAP Note 1979280</li></ul>|
-HANA_SYSNO | EXISTING SAP HANA instance number. Specifies the instance number of the SAP HANA system| <ul><li>Two-digit number from 00 to 97</li><li>Must be unique on a host</li></ul>
-HANA_TENANTS | A list of EXISTENT SAP HANA tenant databases | Mandatory and cannot be empty
+HANA_SID | EXISTING SAP HANA system ID. The SAP system ID identifies the SAP HANA system. <br /> Default value: HDB | <ul><li>Consists of exactly three alphanumeric characters</li><li>Has a letter for the first character</li><li>Does not include any of the reserved IDs listed in SAP Note 1979280</li></ul>|
+HANA_SYSNO | EXISTING SAP HANA instance number. Specifies the instance number of the SAP HANA system. <br />Default value: 00 | <ul><li>Two-digit number from 00 to 97</li><li>Must be unique on a host</li></ul>
+HANA_TENANTS | A list of EXISTENT SAP HANA tenant databases. <br /> Default value: ["HDB"]. | Mandatory and cannot be empty.
 BACKINT_COS_KIT | The full path to the backup agent for IBM COS kit. | Mandatory only if HANA_KIT_FOR_BACKINT_COS is not provided. Make sure the version of the backint agent kit is at least aws-s3-backint-1.2.17-linuxx86_64
 HANA_KIT_FOR_BACKINT_COS | The full path to SAP HANA kit file to be used by the automation to extract backint agent kit for IBM COS aws-s3-backint-....-linuxx86_64.tar.gz. | Mandatory only if BACKINT_COS_KIT is not provided. Make sure the version of the contained backint agent kit is at least aws-s3-backint-1.2.17-linuxx86_64
-CREATE_HDBBACKINT_SCRIPT | The full path to the Python script provided by SAP (SAP note 2935898 - Install and Configure SAP HANA Backint Agent for Amazon S3) to modify the "hdbbackint" script so that it points to the Python 3 libraries | Mandatory
+CREATE_HDBBACKINT_SCRIPT | The full path to the Python script provided by SAP (SAP note 2935898 - Install and Configure SAP HANA Backint Agent for Amazon S3) to modify the "hdbbackint" script so that it points to the Python 3 libraries. <br /> Default value: /storage/hdb_backup_kit_files/<br />python_script/create_hdbbackint.py | Mandatory
 
 **SAP Passwords** 
 The passwords for the SAP HANA system will be asked interactively during terraform plan step and will not be available after the deployment. (Sensitive* values).
@@ -249,7 +251,7 @@ Step 1 - change/adapt Hana backup configuration to not use backint/backup to IBM
 3) Make sure Hana "Backup Catalog" destination is changed  from backint/backup to COS to any other "Destination type" (file/disk, other backup tool). You may use SAP Hana Cockpit, Hana Studio...
 4) Make sure that you don't need the previous backups of Hana data and logs saved to COS; COS and all Hana data backups and logs backups will be deleted; Make sure you saved them before in another location if you still need them.
 5) Run a full DATA backup test for SYSTEM and Tenant DBs using the new backup location (file/disk, other backup tool), different from IBM COS. Make sure all backups complete succesfuly in the new location
-6) Check and reschedule full data backups for SYSTEM and tenant DBs using the new "Destionation type" (file/disk, other backup tool)
+6) Check and reschedule full data backups for SYSTEM and tenant DBs using the new "Destination type" (file/disk, other backup tool)
 
 Step 2 - Release the IBM Bucket and delete all the backups
 
@@ -291,13 +293,13 @@ https://cloud.ibm.com/docs/cloud-object-storage?topic=cloud-object-storage-delet
 - The used files/directories for "Python 3.7 with ssl support" and  "S3 backint"  will still be present at OS level on Hana VSI but Hana will no longer use them.
 
 
-## 2.2 Executing the deployment of **SAP HANA Backup using Backint and IBM Cloud Object Storage** in GUI (Schematics) - under development
+## 2.2 Executing the deployment of **SAP HANA Backup using Backint and IBM Cloud Object Storage** in GUI (Schematics)
 
 The solution is based on Terraform remote-exec and Ansible playbooks executed by Schematics and it is implementing a 'reasonable' set of best practices for SAP VSI host configuration.
 
 **It contains:**
 - Terraform scripts for the deployment of a Cloud Object Storage Instance called `<sid>-hana-backup-instance`, a storage bucket (with no enforced storage quota) called `<sid>-hana-backup-bucket VSI` and to create the service credentials called: `<sid>`, in an EXISTING VPC. The REGIONAL Storage Class with Smart Tier pricing option and the STANDARD pricing plan will be used for the storage instance. The Terraform version used for deployment should be >= 1.3.6. Note: The deployment was tested with Terraform 1.3.6
-- Bash scripts used for the checking of the prerequisites required by SAP HANA VSI deployment and for the integration into a single step in IBM Schematics GUI of the VSI provisioning and the **SAP HANA Backup using Backint and IBM Cloud Object Storage** installation.
+- Bash scripts are used to check the prerequisites for the SAP HANA Backup solution to be integrated into a single step in the IBM Schematics GUI. 
 - Ansible scripts used to install the necessary packages, make the backup configuration and execute the initial data backup.
 Please note that Ansible is started by Terraform and must be available on the same host.
 
@@ -313,10 +315,10 @@ The following parameters can be set in the Schematics workspace: VPC, REGION, SU
 Parameter | Description
 ----------|------------
 IBM_CLOUD_API_KEY | IBM Cloud API key (Sensitive* value).
-PRIVATE_SSH_KEY | Input your id_rsa private key pair content in OpenSSH format (Sensitive* value). This private key should be used only during the terraform provisioning and it is recommended to be changed after the SAP deployment.
-ID_RSA_FILE_PATH | id_rsa private key file path in OpenSSH format with 0600 permissions. This private key is used only during the terraform provisioning and it is recommended to be changed after the SAP deployment. Default value: ID_RSA_FILE_PATH = ~/.ssh/id_rsa
+PRIVATE_SSH_KEY | Input your id_rsa private key content in OpenSSH format (Sensitive* value). This private key should be used only during the terraform provisioning and it is recommended to be changed after the SAP deployment.
+ID_RSA_FILE_PATH | The file path for private_ssh_key will be automatically generated by default. If it is changed, it must contain the relative path from git repo folders. <br /> Default value: "ansible/id_rsa".
 BASTION_FLOATING_IP | The FLOATING IP of an EXISTING Bastion Server, in the same REGION as HANA VSI
-RESOURCE_GROUP | The name of an EXISTING Resource Group. <br /> Default value: "Default". The list of Resource Groups is available [here](https://cloud.ibm.com/account/resource-groups).
+RESOURCE_GROUP | The name of an EXISTING Resource Group for VSIs and Volumes resources.  The list of Resource Groups is available [here](https://cloud.ibm.com/account/resource-groups). <br /> Default value: "Default".
 REGION | The cloud region where HANA VSI was deployed. The COS will be created in the same region as HANA VSI. <br /> The regions and zones for VPC are listed [here](https://cloud.ibm.com/docs/containers?topic=containers-regions-and-zones#zones-vpc). <br /> Review supported locations in IBM Cloud Schematics [here](https://cloud.ibm.com/docs/schematics?topic=schematics-locations).<br /> Sample value: eu-de.
 VPC | The name of an EXISTING VPC where HANA VSI was deployed. The list of VPCs is available [here](https://cloud.ibm.com/vpc-ext/network/vpcs)
 SUBNET | The name of an EXISTING Subnet, the same as for HANA VSI. The list of Subnets is available [here](https://cloud.ibm.com/vpc-ext/network/subnets).
@@ -330,12 +332,12 @@ DB_HOSTNAME_2 | The Hostname of an EXISTING HANA VSI 2. Required only if High Av
 
 Parameter | Description | Requirements
 ----------|-------------|-------------
-HANA_SID | EXISTING SAP HANA system ID. The SAP system ID identifies the SAP HANA system | <ul><li>Consists of exactly three alphanumeric characters</li><li>Has a letter for the first character</li><li>Does not include any of the reserved IDs listed in SAP Note 1979280</li></ul>|
-HANA_SYSNO | EXISTING SAP HANA instance number. Specifies the instance number of the SAP HANA system| <ul><li>Two-digit number from 00 to 97</li><li>Must be unique on a host</li></ul>
-HANA_TENANTS | A list of EXISTENT SAP HANA tenant databases | Mandatory and cannot be empty
+HANA_SID | EXISTING SAP HANA system ID. The SAP system ID identifies the SAP HANA system. <br /> Default value: HDB | <ul><li>Consists of exactly three alphanumeric characters</li><li>Has a letter for the first character</li><li>Does not include any of the reserved IDs listed in SAP Note 1979280</li></ul>|
+HANA_SYSNO | EXISTING SAP HANA instance number. Specifies the instance number of the SAP HANA system. <br />Default value: 00 | <ul><li>Two-digit number from 00 to 97</li><li>Must be unique on a host</li></ul>
+HANA_TENANTS | A list of EXISTENT SAP HANA tenant databases. <br /> Default value: ["HDB"]. | Mandatory and cannot be empty.
 BACKINT_COS_KIT | The full path to the backup agent for IBM COS kit. | Mandatory only if HANA_KIT_FOR_BACKINT_COS is not provided. Make sure the version of the backint agent kit is at least aws-s3-backint-1.2.17-linuxx86_64
 HANA_KIT_FOR_BACKINT_COS | The full path to SAP HANA kit file to be used by the automation to extract backint agent kit for IBM COS aws-s3-backint-....-linuxx86_64.tar.gz. | Mandatory only if BACKINT_COS_KIT is not provided. Make sure the version of the contained backint agent kit is at least aws-s3-backint-1.2.17-linuxx86_64
-CREATE_HDBBACKINT_SCRIPT | The full path to the Python script provided by SAP (SAP note 2935898 - Install and Configure SAP HANA Backint Agent for Amazon S3) to modify the "hdbbackint" script so that it points to the Python 3 libraries | Mandatory
+CREATE_HDBBACKINT_SCRIPT | The full path to the Python script provided by SAP (SAP note 2935898 - Install and Configure SAP HANA Backint Agent for Amazon S3) to modify the "hdbbackint" script so that it points to the Python 3 libraries. <br /> Default value: /storage/hdb_backup_kit_files/<br />python_script/create_hdbbackint.py | Mandatory
 
 **SAP Passwords** 
 The password for the SAP HANA system will be asked interactively during terraform plan step and will not be available after the deployment. (Sensitive* values).
@@ -370,8 +372,7 @@ HANA_MAIN_PASSWORD | HANA system master password. The HANA DB SYSTEM user should
 7.  Review the log file to ensure that no errors occurred during the
     provisioning, modification, or deletion process.
 
-The output of the Schematics Apply Plan will list the public/private IP addresses
-of the VSI host, the hostname and the VPC.
+The output of the Schematics Apply Plan will list the BUCKET_NAME, COS_INSTANCE_NAME, HANA-DB-PRIVATE-IP-VS1, HANA-DB_HOSTNAME_1, HANA-DB_HOSTNAME_2, HANA_SID, HA_CLUSTER, REGION, and VPC.
 
 ### 3.1 Related links:
 

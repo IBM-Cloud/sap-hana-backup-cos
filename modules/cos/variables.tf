@@ -30,4 +30,9 @@ variable "BUCKET_NAME" {
 }
 
 
+variable "ATR_NAME" {
+  description = "Activity Tracker Enter the instance name "
+  type        = string
+}
+
 

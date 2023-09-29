@@ -2,6 +2,15 @@ data "ibm_resource_group" "group" {
   name = var.RESOURCE_GROUP
 }
 
+data "ibm_resource_instance" "activity_tracker" {
+
+  name              = var.ATR_NAME
+  location          = var.REGION
+  resource_group_id = data.ibm_resource_group.group.id
+  service           = "logdnaat"
+}
+
+
 resource "ibm_resource_instance" "cos_instance" {
   name              = "${var.HANA_SID}-hana-backup-instance"
   service           = "cloud-object-storage"
@@ -34,5 +43,17 @@ resource "ibm_cos_bucket" "cos_bucket" {
   noncurrent_version_expiration {
     enable  = true
     noncurrent_days = var.LIFECYCLE_POLICY
+  }
+  activity_tracking {
+    read_data_events     = true
+    write_data_events    = true
+    activity_tracker_crn = data.ibm_resource_instance.activity_tracker.id
+  }
+
+  lifecycle {
+    precondition {
+      condition = data.ibm_resource_instance.activity_tracker.status == "active"
+      error_message = "Provided Activity Tracker instance doesn't exists"
+    }
   }
 }

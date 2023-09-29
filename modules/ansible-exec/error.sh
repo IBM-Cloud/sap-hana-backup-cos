@@ -1,7 +1,7 @@
-#!/bin/sh
+#!/bin/bash
 
-while [ `cat /tmp/ansible.$SAP_DEPLOYMENT-$IP/ansible.$IP.log | egrep -i "failed\=[^0]|unreachable\=[^0]" | wc -l` -ge 1 ]
+while [ `cat /tmp/ansible.$SAP_DEPLOYMENT-$IP.log | egrep -i "failed\=[^0]|unreachable\=[^0]|UNREACHABLE\!|ERROR\!" | wc -l` -ge 1 ]
 do
-   echo -e "Ansible deployment ERROR: \n `cat /tmp/ansible.$SAP_DEPLOYMENT-$IP/ansible.$IP.log | egrep -i "failed\=[^0]|unreachable\=[^0]"` \n  `tail -3 /tmp/ansible.$SAP_DEPLOYMENT-$IP/ansible.$IP.log`";sleep 10
+   echo -e "Ansible deployment ERROR: \n `cat /tmp/ansible.$SAP_DEPLOYMENT-$IP.log | egrep -i "failed\=[^0]|unreachable\=[^0]|UNREACHABLE\!|ERROR\!"`";sleep 10
 
 done

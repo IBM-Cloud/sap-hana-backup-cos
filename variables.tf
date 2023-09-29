@@ -32,7 +32,7 @@ variable "RESOURCE_GROUP" {
 
 variable "REGION" {
 	type		= string
-	description	= "The cloud region where HANA VSI was deployed. The COS will be created in the same region as HANA VSI. The regions and zones for VPC are listed here: https://cloud.ibm.com/docs/containers?topic=containers-regions-and-zones#zones-vpc. Review supported locations in IBM Cloud Schematics here: https://cloud.ibm.com/docs/schematics?topic=schematics-locations."
+	description	= "The cloud region where HANA VSI was deployed, and Activity Tracker: Geographic location of the resource. The COS will be created in the same region as HANA VSI. The regions and zones for VPC are listed here: https://cloud.ibm.com/docs/containers?topic=containers-regions-and-zones#zones-vpc. Review supported locations in IBM Cloud Schematics here: https://cloud.ibm.com/docs/schematics?topic=schematics-locations. Activity Tracker regions are listed here: https://cloud.ibm.com/docs/activity-tracker?topic=activity-tracker-regions"
 	validation {
 		condition     = contains(["au-syd", "jp-osa", "jp-tok", "eu-de", "eu-gb", "ca-tor", "us-south", "us-east", "br-sao"], var.REGION )
 		error_message = "For CLI deployments, the REGION must be one of: au-syd, jp-osa, jp-tok, eu-de, eu-gb, ca-tor, us-south, us-east, br-sao. \n For Schematics, the REGION must be one of: eu-de, eu-gb, us-south, us-east."
@@ -98,6 +98,37 @@ variable "LIFECYCLE_POLICY" {
 	description = "The number of retention days for HANA Database backup and Transaction LOG backup."
 	nullable = false
 }
+
+##############################################################
+# The variables used in Activity Tracker service.
+##############################################################
+
+variable "ATR_NAME" {
+  type        = string
+  description = "Provide the Activity Tracker instance name to create or provide the existing Activity Tracker instance name in the same region where this solution is to be be deployed."
+  nullable	  = false
+}
+
+variable "ATR_PROVISION" {
+  type        = bool
+  description = "Activity Tracker : Disable this to not provision Activity Tracker instance. If an Activity Tracker instance already exists in the same region where this solution is to be deployed then disable (ATR_PROVISION=false) this to avoid provisioning an Activity Tracker instance. A new instance of Activity Tracker will be deployed and integrated with this solution if ATR_PROVISION=true"
+  default     = true
+}
+
+
+variable "ATR_PLAN" {
+  type        = string
+  description = "Mandatory only if ATR_PROVISION is set to true. Activity Tracker: The type of plan the service instance should run under (lite, 7-day, 14-day, or 30-day). The list of service plan is avaialble here: https://cloud.ibm.com/docs/activity-tracker?topic=activity-tracker-service_plan#service_plan"
+  default = "lite"
+  
+}
+
+variable "ATR_TAGS" {
+  type        = list(string)
+  description = "Activity Tracker:  (Optional) only if ATR_PROVISION=true, tags that should be applied to the Activity Tracker instance."
+  default     = null
+}
+
 
 ##############################################################
 # The variables used in SAP Ansible Modules.

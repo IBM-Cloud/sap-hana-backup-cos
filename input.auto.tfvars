@@ -3,7 +3,8 @@
 ##########################################################
 
 REGION = ""  
-# Region for the VSI. Supported regions: https://cloud.ibm.com/docs/containers?topic=containers-regions-and-zones#zones-vpc
+# Region for the VSI and Activity Tracker: Geographic location of the resource. Supported regions: https://cloud.ibm.com/docs/containers?topic=containers-regions-and-zones#zones-vpc
+# Activity Tracker regions are listed here: https://cloud.ibm.com/docs/activity-tracker?topic=activity-tracker-regions"
 # Edit the variable value with your deployment Region.
 # Example: REGION = "eu-de"
 
@@ -15,7 +16,7 @@ SECURITY_GROUP = ""
 # EXISTING Security group, previously created by the user in the same VPC and the same which was set for HANA VSI. The list of available Security Groups: https://cloud.ibm.com/vpc-ext/network/securityGroups
 # Example: SECURITY_GROUP = "ic4sap-securitygroup"
 
-RESOURCE_GROUP = "Default"
+RESOURCE_GROUP = ""
 # EXISTING Resource group, previously created by the user. The list of available Resource Groups: https://cloud.ibm.com/account/resource-groups
 # Example: RESOURCE_GROUP = "wes-automation"
 
@@ -36,6 +37,29 @@ ID_RSA_FILE_PATH = "ansible/id_rsa"
 LIFECYCLE_POLICY = ""
 # The number of retention days for HANA Database backup and Transaction LOG backup
 # Example: LIFECYCLE_POLICY = "120"
+
+##########################################################
+# Activity Tracker variables:
+##########################################################
+
+ATR_PROVISION = ""
+# Enables (ATR_PROVISION=true) or not (ATR_PROVISION=false) the provisioning of a new Activity Tracker instance. Default value: true
+# Example to create Activity Tracker instance: ATR_PROVISION=true
+# Example to use existing Activity Tracker instance : ATR_PROVISION=false
+
+ATR_NAME = ""
+# The name of the Activity Tracker instance to be created or the name of an existent Activity Tracker instance, in the same region chosen for SAP system deployment.
+# Example: ATR_NAME="Activity-Tracker-SAP-eu-de"
+
+ATR_TAGS = [""]
+# Optional parameter. A list of user tags associated with the activity tracker instance.
+# Example: ATR_TAGS = ["activity-tracker-cos"]
+
+ATR_PLAN = ""
+# Mandatory only if ATR_PROVISION is set to true. The list of service plans - https://cloud.ibm.com/docs/activity-tracker?topic=activity-tracker-service_plan#service_plan
+# Default value: "lite"
+# Example: ATR_PLAN = "7-day"
+
 
 ##########################################################
 # HANA VSI variables:

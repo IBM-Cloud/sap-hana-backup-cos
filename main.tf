@@ -25,15 +25,28 @@ module "precheck-ssh-exec" {
   
 }
 
+module "cos-with-activity-tracker" {
+  source  = "./modules/cos/cos-with-activity-tracker"
+  depends_on = [ module.pre-init-cli, module.pre-init-schematics, module.precheck-ssh-exec, null_resource.id_rsa_validation ]
+  IBM_CLOUD_API_KEY=var.IBM_CLOUD_API_KEY
+  RESOURCE_GROUP = var.RESOURCE_GROUP
+  ATR_PROVISION = var.ATR_PROVISION
+  REGION = var.REGION
+  ATR_NAME = var.ATR_NAME
+  ATR_PLAN = var.ATR_PLAN
+  ATR_TAGS = var.ATR_TAGS
+}
+
 module "cos" {
   source  = "./modules/cos"
-  depends_on = [ module.pre-init-cli , module.precheck-ssh-exec, null_resource.id_rsa_validation ]
+  depends_on = [ module.cos-with-activity-tracker ]
   IBM_CLOUD_API_KEY=var.IBM_CLOUD_API_KEY
   REGION  = var.REGION
   RESOURCE_GROUP = var.RESOURCE_GROUP
   HANA_SID = local.hana_sid
   BUCKET_NAME = "${local.hana_sid}-hana-backup-bucket"
   LIFECYCLE_POLICY = var.LIFECYCLE_POLICY
+  ATR_NAME = var.ATR_NAME
 }
 
 

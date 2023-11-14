@@ -3,31 +3,29 @@
 ##########################################################
 
 REGION = ""  
-# Region for the VSI and Activity Tracker: Geographic location of the resource. Supported regions: https://cloud.ibm.com/docs/containers?topic=containers-regions-and-zones#zones-vpc
-# Activity Tracker regions are listed here: https://cloud.ibm.com/docs/activity-tracker?topic=activity-tracker-regions"
-# Edit the variable value with your deployment Region.
+# The cloud region where HANA VSI was deployed. The COS will be created in the same region as HANA VSI. Supported regions: https://cloud.ibm.com/docs/containers?topic=containers-regions-and-zones#zones-vpc
 # Example: REGION = "eu-de"
 
 VPC = ""
-# EXISTING VPC, previously created by the user in the same region as HANA VSI. The list of available VPCs: https://cloud.ibm.com/vpc-ext/network/vpcs
+# The name of the VPC where HANA VSI was deployed. The list of available VPCs: https://cloud.ibm.com/vpc-ext/network/vpcs
 # Example: VPC = "ic4sap"
 
 SECURITY_GROUP = ""
-# EXISTING Security group, previously created by the user in the same VPC and the same which was set for HANA VSI. The list of available Security Groups: https://cloud.ibm.com/vpc-ext/network/securityGroups
+# The Security group which was set for HANA VSI. The list of available Security Groups: https://cloud.ibm.com/vpc-ext/network/securityGroups
 # Example: SECURITY_GROUP = "ic4sap-securitygroup"
 
 RESOURCE_GROUP = ""
-# EXISTING Resource group, previously created by the user. The list of available Resource Groups: https://cloud.ibm.com/account/resource-groups
+# The name of an EXISTING Resource Group, same as for HANA VSI. The list of available Resource Groups: https://cloud.ibm.com/account/resource-groups
 # Example: RESOURCE_GROUP = "wes-automation"
 
 SUBNET = ""
-# EXISTING Subnet in the same region and zone as HANA VSI, previously created by the user. The list of available Subnets: https://cloud.ibm.com/vpc-ext/network/subnets
+# The Subnet set for HANA VSI. The list of available Subnets: https://cloud.ibm.com/vpc-ext/network/subnets
 # Example: SUBNET = "ic4sap-subnet"
 
 ID_RSA_FILE_PATH = "ansible/id_rsa"
-# Input your existing id_rsa private key file path in OpenSSH format with 0600 permissions.
+# Existing id_rsa private key file path in OpenSSH format with 0600 permissions.
 # This private key it is used only during the terraform provisioning and it is recommended to be changed after the SAP deployment.
-# It must contain the relative or absoute path from your Bastion.
+# It must contain the relative or absoute path on your Bastion.
 # Examples: "ansible/sap_hana_backup_cos" , "~/.ssh/sap_hana_backup_cos" , "/root/.ssh/id_rsa".
 
 ##########################################################
@@ -42,33 +40,18 @@ LIFECYCLE_POLICY = ""
 # Activity Tracker variables:
 ##########################################################
 
-ATR_PROVISION = ""
-# Enables (ATR_PROVISION=true) or not (ATR_PROVISION=false) the provisioning of a new Activity Tracker instance. Default value: true
-# Example to create Activity Tracker instance: ATR_PROVISION=true
-# Example to use existing Activity Tracker instance : ATR_PROVISION=false
-
 ATR_NAME = ""
-# The name of the Activity Tracker instance to be created or the name of an existent Activity Tracker instance, in the same region chosen for SAP system deployment.
+# The name of the EXISTING Activity Tracker instance, in the same region as HANA VSI and COS. The list of available Activity Tracker is available here: https://cloud.ibm.com/observe/activitytracker
 # Example: ATR_NAME="Activity-Tracker-SAP-eu-de"
-
-ATR_TAGS = [""]
-# Optional parameter. A list of user tags associated with the activity tracker instance.
-# Example: ATR_TAGS = ["activity-tracker-cos"]
-
-ATR_PLAN = ""
-# Mandatory only if ATR_PROVISION is set to true. The list of service plans - https://cloud.ibm.com/docs/activity-tracker?topic=activity-tracker-service_plan#service_plan
-# Default value: "lite"
-# Example: ATR_PLAN = "7-day"
-
 
 ##########################################################
 # HANA VSI variables:
 ##########################################################
 
 HA_CLUSTER = ""
-# Specify if High Availability is configured for HANA Database. Accepted values: yes/no
-# For the value "no" it is required that only one variable to be filled in: DB_HOSTNAME_1
-# For the value "yes" it is required that both next variables to be filled in: DB_HOSTNAME_1, DB_HOSTNAME_2
+# Specifies if High Availability is configured for HANA Database. Accepted values: yes/no
+# For the value "no", only variable DB_HOSTNAME_1 must be filled in
+# For the value "yes" the following two variables must to be filled in: DB_HOSTNAME_1, DB_HOSTNAME_2
 # Example: HA_CLUSTER = "yes"
 
 DB_HOSTNAME_1 = ""

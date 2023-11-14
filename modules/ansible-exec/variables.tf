@@ -8,7 +8,7 @@ variable "IP" {
     description = "IP used by ansible"
 }
 
-variable "private_ssh_key" {
+variable "PRIVATE_SSH_KEY" {
     type = string
     description = "Private ssh key"
 }

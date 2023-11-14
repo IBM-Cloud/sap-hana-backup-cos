@@ -35,4 +35,8 @@ variable "ATR_NAME" {
   type        = string
 }
 
+variable "ATR_ENABLE" {
+  description = "Enable Activity Tracker usage"
+  type        = bool
+}
 

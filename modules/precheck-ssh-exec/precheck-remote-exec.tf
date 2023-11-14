@@ -6,7 +6,7 @@ resource "null_resource" "check-bastion-resources" {
             type = "ssh"
             user = "root"
             host = var.BASTION_FLOATING_IP
-            private_key = var.private_ssh_key
+            private_key = var.PRIVATE_SSH_KEY
             timeout = "1m"
          }
 

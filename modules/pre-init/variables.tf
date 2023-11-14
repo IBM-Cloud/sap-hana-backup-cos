@@ -3,7 +3,7 @@ variable "ID_RSA_FILE_PATH" {
     description = "Input your id_rsa private key file path in OpenSSH format."
 }
 
-variable "private_ssh_key" {
+variable "PRIVATE_SSH_KEY" {
     type = string
     description = "Private ssh key"
 }

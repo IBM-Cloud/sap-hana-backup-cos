@@ -4,7 +4,7 @@ resource "null_resource" "ansible-exec" {
       type = "ssh"
       user = "root"
       host = var.BASTION_FLOATING_IP
-      private_key = var.private_ssh_key
+      private_key = var.PRIVATE_SSH_KEY
       timeout = "2m"
     }
 
@@ -162,7 +162,7 @@ resource "null_resource" "ansible-delete-sensitive-data" {
         type = "ssh"
         user = "root"
         host = var.BASTION_FLOATING_IP
-        private_key = var.private_ssh_key
+        private_key = var.PRIVATE_SSH_KEY
         timeout = "1m"
      }
 

@@ -13,7 +13,7 @@ variable "HOSTNAME" {
     description = "VSI Hostname"
 }
 
-variable "private_ssh_key" {
+variable "PRIVATE_SSH_KEY" {
     type = string
     description = "Private ssh key"
 }

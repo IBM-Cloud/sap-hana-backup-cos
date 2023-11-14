@@ -3,14 +3,7 @@
 ## Description
 This automation solution is designed for the implementation of an SAP HANA Backup solution using Backint and [**IBM Cloud Object Storage**](https://cloud.ibm.com/docs/cloud-object-storage?topic=cloud-object-storage-getting-started-cloud-object-storage). It is based on SAP note "2935898 - Install and Configure SAP HANA Backint Agent for Amazon S3".  
 
-
-IBM Cloud Activity Tracker service collects and stores audit records for API calls made to resources that run in the IBM Cloud. It can be used to monitor the activity of your IBM Cloud account, investigate abnormal activity and critical actions, and comply with regulatory audit requirements. In addition, you can be alerted on actions as they happen. For more information, see [IBM Cloud Activity Tracker](https://cloud.ibm.com/docs/activity-tracker?topic=activity-tracker-getting-started#gs_ov).
-
-In order to track the events specific to the resources deployed by this solution, the IBM Cloud Activity Tracker to be used should be specified. In case there is no IBM Cloud Activity Tracker instance available in the same region as the IBM Cloud resources to be deployed, the automation will create a new one, based on the provided data.
-Note: If you choose the automation to create a new activity plan at the same time with the deployment of the SAP solution and, later, you want to remove the IBM Cloud resources specific to the SAP solution, by using the automation, the activity planner will be removed as well.
-
-The available pricing plans for an IBM Cloud Activity Tracker instance can be found [here](https://cloud.ibm.com/docs/activity-tracker?topic=activity-tracker-service_plan#service_plan).
-
+In order to track the events specific to the resources deployed by this solution, the [IBM Cloud Activity Tracker](https://cloud.ibm.com/docs/activity-tracker?topic=activity-tracker-getting-started#gs_ov) to be used should be specified. IBM Cloud Activity Tracker service collects and stores audit records for API calls made to resources that run in the IBM Cloud. It can be used to monitor the activity of your IBM Cloud account, investigate abnormal activity and critical actions, and comply with regulatory audit requirements. In addition, you can be alerted on actions as they happen.
 
 The minimum version of SAP HANA Backint Agent for Amazon S3, to be used for IBM COS, is 1.2.17. "SAP HANA Backint Agent for Amazon S3" requires Python3.7, including SSL support. The Python package delivered as part of the SAP HANA 2 installation does not include SSL support, so Python 3.7 with SSL support will be installed in addition in `/usr/local/bin` directory, in case it isn't previously installed. SAP HANA Backint Agent for Amazon S3 will be installed in `/hana/shared/<SID>/backint_agent` directory.
 
@@ -20,10 +13,11 @@ All data backup, log backup and catalog backup files are saved in the same dedic
 
 ## Prerequisites
 - An SAP HANA system (built on one of the following OS: SUSE Linux Enterprise Server 15 SP 4 for SAP, SUSE Linux Enterprise Server 15 SP 3 for SAP, Red Hat Enterprise Linux 8.6 for SAP or Red Hat Enterprise Linux 8.4 for SAP) should have been previously deployed in an IBM Cloud Gen2 VPC, on a single host (with or without HA).  
-  - **Note**: This HANA backup solution was implemented and tested on the following OS images available in IBM Cloud: ibm-sles-15-4-amd64-sap-hana-3, ibm-sles-15-3-amd64-sap-hana-2, ibm-redhat-8-6-amd64-sap-hana-2, ibm-redhat-8-4-amd64-sap-hana-2.
+  - **Note**: This HANA backup solution was implemented and tested on the following OS images available in IBM Cloud: ibm-sles-15-4-amd64-sap-hana-5, ibm-sles-15-3-amd64-sap-hana-8, ibm-redhat-8-6-amd64-sap-hana-4, ibibm-redhat-8-4-amd64-sap-hana-7.
 - A [bastion](https://github.com/IBM-Cloud/sap-bastion-setup) server with secure remote SSH access should have been deployed in the same region and zone of the IBM Cloud Gen2 VPC as the SAP HANA system
 - A pair of SSH keys to be used to run the automation for the backup configuration should be available. The public SSH key should be manually added on SAP HANA VSI, in `/root/.ssh/authorized_keys` and uploaded in IBM Cloud.
-- The IBM Cloud user running the automation for SAP HANA backup should have the [**role of Manager on IBM Cloud Object Storage**](https://cloud.ibm.com/docs/cloud-object-storage?topic=cloud-object-storage-getting-started-cloud-object-storage). To [view/use the credential](https://cloud.ibm.com/docs/account?topic=account-service_credentials&interface=ui), the user must have the IAM level access action `resource-controller.credential.retrieve_all`. This action is given with the **Administrator role**, and overrides any credential level access enabling the user to view the credential.  To complete the steps to manage access to the service, your user ID needs **Administrator platform permissions** to manage the **IBM Cloud Activity Tracker service**.
+- The IBM Cloud user running the automation for SAP HANA backup should have the [**role of Manager on IBM Cloud Object Storage**](https://cloud.ibm.com/docs/cloud-object-storage?topic=cloud-object-storage-getting-started-cloud-object-storage). To [view/use the credential](https://cloud.ibm.com/docs/account?topic=account-service_credentials&interface=ui), the user must have the IAM level access action `resource-controller.credential.retrieve_all`. This action is given with the **Administrator role**, and overrides any credential level access enabling the user to view the credential.  
+
 **Procedure**: Go to https://cloud.ibm.com/iam/users and select the USER_ID wich will run the automation and then check/grant the required roles. The results should look like bellow:  
 ![COS Roles](./cos_roles.png "COS Roles")
 
@@ -74,7 +68,7 @@ See:
 The solution is based on Terraform scripts and Ansible playbooks executed in CLI and it is implementing a 'reasonable' set of best practices for SAP VSI host configuration.
 
 **It contains:**
-- Terraform scripts for the deployment of a Cloud Object Storage Instance called `<sid>-hana-backup-instance`, a storage bucket (with no enforced storage quota) called `<sid>-hana-backup-bucket VSI` and to create the service credentials called: `<sid>`, in an EXISTING VPC. The REGIONAL Storage Class with Smart Tier pricing option and the STANDARD pricing plan will be used for the storage instance. The automation has support for the following versions: Terraform >= 1.3.6 and IBM Cloud provider for Terraform >= 1.41.1.  Note: The deployment was tested with Terraform 1.3.6
+- Terraform scripts for the deployment of a Cloud Object Storage Instance called `<sid>-hana-backup-instance`, a storage bucket (with no enforced storage quota) called `<sid>-hana-backup-bucket VSI` and to create the service credentials called: `<sid>`, in an EXISTING VPC. The REGIONAL Storage Class with Smart Tier pricing option and the STANDARD pricing plan will be used for the storage instance. The automation has support for the following versions: Terraform >= 1.5.7 and IBM Cloud provider for Terraform >= 1.57.0.  Note: The deployment was tested with Terraform 1.5.7
 - Ansible scripts used to install the necessary packages, make the backup configuration and execute the initial data backup.
 Please note that Ansible is started by Terraform and must be available on the same host.
 
@@ -84,7 +78,7 @@ You can create an API Key [here](https://cloud.ibm.com/iam/apikeys).
 
 ### Input parameter file
 The solution is configured by asigning the appropriate values to the variables in `input.auto.tfvars` file.
-Edit the file `input.auto.tfvars` and asign the appropriate values for: VPC, REGION, SUBNET, SECURITY_GROUP, RESOURCE_GROUP, ID_RSA_FILE_PATH, LIFECYCLE_POLICY, ATR_PROVISION, ATR_NAME, ATR_TAGS, ATR_PLAN, DB_HOSTNAME_1, DB_HOSTNAME_2, HA_CLUSTER as in the following example:
+Edit the file `input.auto.tfvars` and asign the appropriate values for: VPC, REGION, SUBNET, SECURITY_GROUP, RESOURCE_GROUP, ID_RSA_FILE_PATH, LIFECYCLE_POLICY, ATR_NAME, DB_HOSTNAME_1, DB_HOSTNAME_2, HA_CLUSTER as in the following example:
 
 **IBM Cloud input parameters**
 
@@ -93,39 +87,37 @@ Edit the file `input.auto.tfvars` and asign the appropriate values for: VPC, REG
 # General VPC variables:
 ##########################################################
 
-REGION = ""  
-# Region for the VSI and Activity Tracker: Geographic location of the resource. Supported regions: https://cloud.ibm.com/docs/containers?topic=containers-regions-and-zones#zones-vpc
-# Activity Tracker regions are listed here: https://cloud.ibm.com/docs/activity-tracker?topic=activity-tracker-regions"
-# Edit the variable value with your deployment Region.
+REGION = "eu-de"  
+# The cloud region where HANA VSI was deployed. The COS will be created in the same region as HANA VSI. Supported regions: https://cloud.ibm.com/docs/containers?topic=containers-regions-and-zones#zones-vpc
 # Example: REGION = "eu-de"
 
-VPC = ""
-# EXISTING VPC, previously created by the user in the same region as HANA VSI. The list of available VPCs: https://cloud.ibm.com/vpc-ext/network/vpcs
+VPC = "ic4sap"
+# The name of the VPC where HANA VSI was deployed. The list of VPCs is available here: https://cloud.ibm.com/vpc-ext/network/vpcs
 # Example: VPC = "ic4sap"
 
-SECURITY_GROUP = ""
-# EXISTING Security group, previously created by the user in the same VPC and the same which was set for HANA VSI. The list of available Security Groups: https://cloud.ibm.com/vpc-ext/network/securityGroups
+SECURITY_GROUP = "ic4sap-securitygroup"
+# The Security group which was set for HANA VSI. The list of available Security Groups: https://cloud.ibm.com/vpc-ext/network/securityGroups
 # Example: SECURITY_GROUP = "ic4sap-securitygroup"
 
 RESOURCE_GROUP = "Default"
-# EXISTING Resource group, previously created by the user. The list of available Resource Groups: https://cloud.ibm.com/account/resource-groups
+# EXISTING Resource Group, the same as for HANA VSI. The list of Resource Groups is available here: https://cloud.ibm.com/account/resource-groups
 # Example: RESOURCE_GROUP = "wes-automation"
 
-SUBNET = ""
-# EXISTING Subnet in the same region and zone as HANA VSI, previously created by the user. The list of available Subnets: https://cloud.ibm.com/vpc-ext/network/subnets
+SUBNET = "ic4sap-subnet"
+# EXISTING Subnet, the same as for HANA VSI. The list of Subnets is available here: https://cloud.ibm.com/vpc-ext/network/subnets
 # Example: SUBNET = "ic4sap-subnet"
 
 ID_RSA_FILE_PATH = "ansible/id_rsa"
-# Input your existing id_rsa private key file path in OpenSSH format with 0600 permissions.
+# Existing id_rsa private key file path in OpenSSH format with 0600 permissions.
 # This private key it is used only during the terraform provisioning and it is recommended to be changed after the SAP deployment.
-# It must contain the relative or absoute path from your Bastion.
+# It must contain the relative or absoute path on your Bastion.
 # Examples: "ansible/sap_hana_backup_cos" , "~/.ssh/sap_hana_backup_cos" , "/root/.ssh/id_rsa".
 
 ##########################################################
 # COS variables:
 ##########################################################
 
-LIFECYCLE_POLICY = ""
+LIFECYCLE_POLICY = "120"
 # The number of retention days for HANA Database backup and Transaction LOG backup
 # Example: LIFECYCLE_POLICY = "120"
 
@@ -133,36 +125,21 @@ LIFECYCLE_POLICY = ""
 # Activity Tracker variables:
 ##########################################################
 
-ATR_PROVISION = "true"
-# Enables (ATR_PROVISION=true) or not (ATR_PROVISION=false) the provisioning of a new Activity Tracker instance. Default value: true
-# Example to create Activity Tracker instance: ATR_PROVISION=true
-# Example to use existing Activity Tracker instance : ATR_PROVISION=false
-
 ATR_NAME = "Activity-Tracker-SAP-eu-de"
-# The name of the Activity Tracker instance to be created or the name of an existent Activity Tracker instance, in the same region chosen for SAP system deployment.
+# The name of the EXISTING Activity Tracker instance, in the same region as HANA VSI and COS. The list of available Activity Tracker is available here: https://cloud.ibm.com/observe/activitytracker
 # Example: ATR_NAME="Activity-Tracker-SAP-eu-de"
-
-ATR_TAGS = [""]
-# Optional parameter. A list of user tags associated with the activity tracker instance.
-# Example: ATR_TAGS = ["activity-tracker-cos"]
-
-ATR_PLAN = "lite"
-# Mandatory only if ATR_PROVISION is set to true. The list of service plans - https://cloud.ibm.com/docs/activity-tracker?topic=activity-tracker-service_plan#service_plan
-# Default value: "lite"
-# Example: ATR_PLAN = "7-day"
-
 
 ##########################################################
 # HANA VSI variables:
 ##########################################################
 
-HA_CLUSTER = ""
-# Specify if High Availability is configured for HANA Database. Accepted values: yes/no
-# For the value "no" it is required that only one variable to be filled in: DB_HOSTNAME_1
-# For the value "yes" it is required that both next variables to be filled in: DB_HOSTNAME_1, DB_HOSTNAME_2
+HA_CLUSTER = "no"
+# Specifies if High Availability is configured for HANA Database. Accepted values: yes/no
+# For the value "no", only variable DB_HOSTNAME_1 must be filled in
+# For the value "yes" the following two variables must to be filled in: DB_HOSTNAME_1, DB_HOSTNAME_2
 # Example: HA_CLUSTER = "yes"
 
-DB_HOSTNAME_1 = ""
+DB_HOSTNAME_1 = "hanadb-vsi1"
 # The Hostname of an EXISTING HANA DB VSI. Required. The hostname should be up to 13 characters, as required by SAP
 # If High Availability is configured for HANA Database should be the hostname of HANA DB VSI 1.
 # Example: DB_HOSTNAME_1 = "hanadb-vsi1"
@@ -175,22 +152,17 @@ DB_HOSTNAME_2 = ""
 
 Parameter | Description
 ----------|------------
-REGION | The cloud region where HANA VSI was deployed, and Activity Tracker: Geographic location of the resource. <br /> The COS will be created in the same region as HANA VSI. The regions and zones for VPC are listed [here](https://cloud.ibm.com/docs/containers?topic=containers-regions-and-zones#zones-vpc). <br /> Review supported locations in IBM Cloud Schematics [here](https://cloud.ibm.com/docs/schematics?topic=schematics-locations). Activity Tracker regions are listed [here](https://cloud.ibm.com/docs/activity-tracker?topic=activity-tracker-regions).<br /> Sample value: eu-de.
-VPC | The name of an EXISTING VPC where HANA VSI was deployed. The list of VPCs is available [here](https://cloud.ibm.com/vpc-ext/network/vpcs)
-SECURITY_GROUP | The name of an EXISTING Security group, the same as for HANA VSI. The list of Security Groups is available [here](https://cloud.ibm.com/vpc-ext/network/securityGroups).
-RESOURCE_GROUP | The name of an EXISTING Resource Group for VSIs and Volumes resources.  The list of Resource Groups is available [here](https://cloud.ibm.com/account/resource-groups). <br /> Default value: "Default".
-SUBNET | The name of an EXISTING Subnet, the same as for HANA VSI. The list of Subnets is available [here](https://cloud.ibm.com/vpc-ext/network/subnets).
-ID_RSA_FILE_PATH | The file path for private_ssh_key will be automatically generated by default. If it is changed, it must contain the relative path from git repo folders. <br /> Default value: "ansible/id_rsa".
+REGION | The cloud region where HANA VSI was deployed. <br /> The COS will be created in the same region as HANA VSI. The regions and zones for VPC are listed [here](https://cloud.ibm.com/docs/containers?topic=containers-regions-and-zones#zones-vpc). <br /> Supported locations in IBM Cloud Schematics [here](https://cloud.ibm.com/docs/schematics?topic=schematics-locations).<br /> Sample value: eu-de.
+VPC | The name of the VPC where HANA VSI was deployed. The list of VPCs is available [here](https://cloud.ibm.com/vpc-ext/network/vpcs)
+SECURITY_GROUP | EXISTING Security group, same as for HANA VSI. The list of Security Groups is available [here](https://cloud.ibm.com/vpc-ext/network/securityGroups).
+RESOURCE_GROUP | EXISTING Resource Group, the same as for HANA VSI. The list of Resource Groups is available  [here](https://cloud.ibm.com/account/resource-groups). <br /> Default value: "Default".
+SUBNET | EXISTING Subnet, same as for HANA VSI. The list of Subnets is available [here](https://cloud.ibm.com/vpc-ext/network/subnets).
+ID_RSA_FILE_PATH | The file path for PRIVATE_SSH_KEY will be automatically generated. If it is changed, it must contain the relative path to git repository folders. <br /> Default value: "ansible/id_rsa".
 LIFECYCLE_POLICY | The number of retention days for HANA Database backup and Transaction LOG backup.
-ATR_NAME | The name of the Activity Tracker instance to be created or the name of an existent Activity Tracker instance, in the same region chosen for SAP system deployment.
-ATR_PROVISION | Enables (ATR_PROVISION=true) or not (ATR_PROVISION=false) the provisioning of a new Activity Tracker instance. <br /> Default value: true
-ATR_PLAN | Mandatory only if ATR_PROVISION is set to true.  The list of service plan is available [here](https://cloud.ibm.com/docs/activity-tracker?topic=activity-tracker-service_plan#service_plan). <br /> Default value: "lite"
-ATR_TAGS | Optional parameter. A list of user tags associated with the activity tracker instance.
+ATR_NAME | The name of the EXISTING Activity Tracker instance, in the same region as HANA VSI. The list of available Activity Tracker is available [here](https://cloud.ibm.com/observe/activitytracker)
 HA_CLUSTER | Specifies if High Availability is configured for HANA Database. Accepted values: yes/no. For the value "no" it is required that only one variable to be filled in: DB_HOSTNAME_1. For the value "yes" it is required that both next variables to be filled in: DB_HOSTNAME_1, DB_HOSTNAME_2
 DB_HOSTNAME_1 | The Hostname of an EXISTING HANA VSI. Required. If High Availability is configured for HANA Database should be the hostname of HANA DB VSI 1. The hostname should be up to 13 characters as required by SAP. For more information on rules regarding hostnames for SAP systems, check [SAP Note 611361: Hostnames of SAP ABAP Platform servers](https://launchpad.support.sap.com/#/notes/%20611361) 
 DB_HOSTNAME_2 | The Hostname of an EXISTING HANA VSI 2. Required only if High Availability is configured for HANA Database. The hostname should be up to 13 characters as required by SAP. For more information on rules regarding hostnames for SAP systems, check [SAP Note 611361: Hostnames of SAP ABAP Platform servers](https://launchpad.support.sap.com/#/notes/%20611361)
-
-
 
 **SAP input parameters**
 The solution is configured by asigning the appropriate values to the variables in `input.auto.tfvars` file.
@@ -328,15 +300,13 @@ https://cloud.ibm.com/docs/cloud-object-storage?topic=cloud-object-storage-delet
 
 **Notes:**
 - The used files/directories for "Python 3.7 with ssl support" and  "S3 backint"  will still be present at OS level on Hana VSI but Hana will no longer use them.
-- The terraform destroy command will remove also the Activity Tracker instance, if it was provisioned at the same time with the SAP solution (when the parameter ATR_PROVISION was set to true during the deployment of the SAP solution).
-
 
 ## 2.2 Executing the deployment of **SAP HANA Backup using Backint and IBM Cloud Object Storage** in GUI (Schematics)
 
 The solution is based on Terraform remote-exec and Ansible playbooks executed by Schematics and it is implementing a 'reasonable' set of best practices for SAP VSI host configuration.
 
 **It contains:**
-- Terraform scripts for the deployment of a Cloud Object Storage Instance called `<sid>-hana-backup-instance`, a storage bucket (with no enforced storage quota) called `<sid>-hana-backup-bucket VSI` and to create the service credentials called: `<sid>`, in an EXISTING VPC. The REGIONAL Storage Class with Smart Tier pricing option and the STANDARD pricing plan will be used for the storage instance. The automation has support for the following versions: Terraform >= 1.3.6 and IBM Cloud provider for Terraform >= 1.41.1.  Note: The deployment was tested with Terraform 1.3.6
+- Terraform scripts for the deployment of a Cloud Object Storage Instance called `<sid>-hana-backup-instance`, a storage bucket (with no enforced storage quota) called `<sid>-hana-backup-bucket VSI` and to create the service credentials called: `<sid>`, in an EXISTING VPC. The REGIONAL Storage Class with Smart Tier pricing option and the STANDARD pricing plan will be used for the storage instance. The automation has support for the following versions: Terraform >= 1.5.7 and IBM Cloud provider for Terraform >= 1.57.0.  Note: The deployment was tested with Terraform 1.5.7
 - Bash scripts are used to check the prerequisites for the SAP HANA Backup solution to be integrated into a single step in the IBM Schematics GUI. 
 - Ansible scripts used to install the necessary packages, make the backup configuration and execute the initial data backup.
 Please note that Ansible is started by Terraform and must be available on the same host.
@@ -346,26 +316,23 @@ The IBM Cloud API Key should be provided as input value of type sensitive for "I
 The IBM Cloud API Key can be created [here](https://cloud.ibm.com/iam/apikeys).
 
 ### Input parameters
-The following parameters can be set in the Schematics workspace: VPC, REGION, SUBNET, SECURITY_GROUP, RESOURCE_GROUP, ID_RSA_FILE_PATH, LIFECYCLE_POLICY, ATR_PROVISION, ATR_NAME, ATR_TAGS, ATR_PLAN, DB_HOSTNAME_1, DB_HOSTNAME_2, HA_CLUSTER and your SAP system configuration variables, as below:
+The following parameters can be set in the Schematics workspace: VPC, REGION, SUBNET, SECURITY_GROUP, RESOURCE_GROUP, ID_RSA_FILE_PATH, LIFECYCLE_POLICY, ATR_NAME, DB_HOSTNAME_1, DB_HOSTNAME_2, HA_CLUSTER and the SAP system configuration variables, as below:
 
 **IBM Cloud input parameters:**
 
 Parameter | Description
 ----------|------------
 IBM_CLOUD_API_KEY | IBM Cloud API key (Sensitive* value).
-PRIVATE_SSH_KEY | Input your id_rsa private key content in OpenSSH format (Sensitive* value). This private key should be used only during the terraform provisioning and it is recommended to be changed after the SAP deployment.
-ID_RSA_FILE_PATH | The file path for private_ssh_key will be automatically generated by default. If it is changed, it must contain the relative path from git repo folders. <br /> Default value: "ansible/id_rsa".
+PRIVATE_SSH_KEY | id_rsa private key content in OpenSSH format (Sensitive* value). This private key should be used only during the terraform provisioning and it is recommended to be changed after the SAP deployment.
+ID_RSA_FILE_PATH | The file path for PRIVATE_SSH_KEY will be automatically generated. If it is changed, it must contain the relative path to git repository folders. <br /> Default value: "ansible/id_rsa".
 BASTION_FLOATING_IP | The FLOATING IP of an EXISTING Bastion Server, in the same REGION as HANA VSI
-RESOURCE_GROUP | The name of an EXISTING Resource Group for VSIs and Volumes resources.  The list of Resource Groups is available [here](https://cloud.ibm.com/account/resource-groups). <br /> Default value: "Default".
-REGION | The cloud region where HANA VSI was deployed, and Activity Tracker: Geographic location of the resource. <br /> The COS will be created in the same region as HANA VSI. The regions and zones for VPC are listed [here](https://cloud.ibm.com/docs/containers?topic=containers-regions-and-zones#zones-vpc). <br /> Review supported locations in IBM Cloud Schematics [here](https://cloud.ibm.com/docs/schematics?topic=schematics-locations). Activity Tracker regions are listed [here](https://cloud.ibm.com/docs/activity-tracker?topic=activity-tracker-regions).<br /> Sample value: eu-de.
-VPC | The name of an EXISTING VPC where HANA VSI was deployed. The list of VPCs is available [here](https://cloud.ibm.com/vpc-ext/network/vpcs)
-SUBNET | The name of an EXISTING Subnet, the same as for HANA VSI. The list of Subnets is available [here](https://cloud.ibm.com/vpc-ext/network/subnets).
-SECURITY_GROUP | The name of an EXISTING Security group, the same as for HANA VSI. The list of Security Groups is available [here](https://cloud.ibm.com/vpc-ext/network/securityGroups).
+REGION | The cloud region where HANA VSI was deployed. <br /> The COS will be created in the same region as HANA VSI. The regions and zones for VPC are listed [here](https://cloud.ibm.com/docs/containers?topic=containers-regions-and-zones#zones-vpc). <br /> Supported locations in IBM Cloud Schematics [here](https://cloud.ibm.com/docs/schematics?topic=schematics-locations).<br /> Sample value: eu-de.
+VPC | The name of the VPC where HANA VSI was deployed. The list of VPCs is available [here](https://cloud.ibm.com/vpc-ext/network/vpcs)
+SECURITY_GROUP | EXISTING Security group, same as for HANA VSI. The list of Security Groups is available [here](https://cloud.ibm.com/vpc-ext/network/securityGroups).
+RESOURCE_GROUP | EXISTING Resource Group, the same as for HANA VSI. The list of Resource Groups is available  [here](https://cloud.ibm.com/account/resource-groups). <br /> Default value: "Default".
+SUBNET | EXISTING Subnet, same as for HANA VSI. The list of Subnets is available [here](https://cloud.ibm.com/vpc-ext/network/subnets).
 LIFECYCLE_POLICY | The number of retention days for HANA Database backup and Transaction LOG backup.
-ATR_NAME | The name of the Activity Tracker instance to be created or the name of an existent Activity Tracker instance, in the same region chosen for SAP system deployment.
-ATR_PROVISION | Enables (ATR_PROVISION=true) or not (ATR_PROVISION=false) the provisioning of a new Activity Tracker instance.. <br /> Default value: true
-ATR_PLAN | Mandatory only if ATR_PROVISION is set to true. The list of service plan is available [here](https://cloud.ibm.com/docs/activity-tracker?topic=activity-tracker-service_plan#service_plan). <br /> Default value: "lite"
-ATR_TAGS | Optional parameter. A list of user tags associated with the activity tracker instance.
+ATR_NAME | The name of the EXISTING Activity Tracker instance, in the same region as HANA VSI. The list of available Activity Tracker is available [here](https://cloud.ibm.com/observe/activitytracker)
 HA_CLUSTER | Specifies if High Availability is configured for HANA Database. Accepted values: yes/no. For the value "no" it is required that only one variable to be filled in: DB_HOSTNAME_1. For the value "yes" it is required that both next variables to be filled in: DB_HOSTNAME_1, DB_HOSTNAME_2
 DB_HOSTNAME_1 | The Hostname of an EXISTING HANA VSI. Required. If High Availability is configured for HANA Database should be the hostname of HANA DB VSI 1. The hostname should be up to 13 characters as required by SAP. For more information on rules regarding hostnames for SAP systems, check [SAP Note 611361: Hostnames of SAP ABAP Platform servers](https://launchpad.support.sap.com/#/notes/%20611361) 
 DB_HOSTNAME_2 | The Hostname of an EXISTING HANA VSI 2. Required only if High Availability is configured for HANA Database. The hostname should be up to 13 characters as required by SAP. For more information on rules regarding hostnames for SAP systems, check [SAP Note 611361: Hostnames of SAP ABAP Platform servers](https://launchpad.support.sap.com/#/notes/%20611361)
@@ -397,24 +364,26 @@ HANA_MAIN_PASSWORD | HANA system master password. The HANA DB SYSTEM user should
 1.  Make sure you have the [required IBM Cloud IAM permissions](https://cloud.ibm.com/docs/vpc?topic=vpc-managing-user-permissions-for-vpc-resources) to create and work with VPC infrastructure and you are [assigned the correct permissions](https://cloud.ibm.com/docs/schematics?topic=schematics-access) to create the workspace in Schematics and deploy resources.
 2.  [Generate an SSH key](https://cloud.ibm.com/docs/vpc?topic=vpc-ssh-keys). The SSH key is required to access the provisioned VPC virtual server instances via the bastion host. After you have created your SSH key, make sure to [upload this SSH key to your IBM Cloud account](https://cloud.ibm.com/docs/vpc-on-classic-vsi?topic=vpc-on-classic-vsi-managing-ssh-keys#managing-ssh-keys-with-ibm-cloud-console) in the VPC region and resource group where you want to deploy the HANA backup solution
 3.  Create the Schematics workspace:
-    1.  From the IBM Cloud menu select [Schematics](https://cloud.ibm.com/schematics/overview).
-       - Click Create a workspace.
-       - Enter a name for your workspace.
-       - Click Create to create your workspace.
-    2.  On the workspace **Settings** page, enter the URL of this solution in the Schematics examples Github repository.
-     - Select the latest Terraform version.
-     - Click **Save template information**.
-     - In the **Input variables** section, review the default input variables and provide alternatives if desired.
-    - Click **Save changes**.
-
-4.  From the workspace **Settings** page, click **Generate plan** 
-5.  Click **View log** to review the log files of your Terraform
-    execution plan.
-6.  Apply your Terraform template by clicking **Apply plan**.
-7.  Review the log file to ensure that no errors occurred during the
+    1.  From the IBM Cloud menu
+    select [Schematics](https://cloud.ibm.com/schematics/overview).
+        - Push the `Create workspace` button.
+        - Provide the URL of the Github repository of this solution
+        - Select the latest Terraform version.
+        - Click on `Next` button
+        - Provide a name, the resources group and location for your workspace
+        - Push `Next` button
+        - Review the provided information and then push `Create` button to create your workspace
+    2.  On the workspace **Settings** page, 
+        - In the **Input variables** section, review the default values for the input variables and provide alternatives if desired.
+        - Click **Save changes**.
+4.  From the workspace **Settings** page, click **Generate plan** 
+5.  From the workspace **Jobs** page, the logs of your Terraform
+    execution plan can be reviewed.
+6.  Apply your Terraform template by clicking **Apply plan**.
+7.  Review the logs to ensure that no errors occurred during the
     provisioning, modification, or deletion process.
 
-The output of the Schematics Apply Plan will list the Activity Tracker instance name, BUCKET_NAME, COS_INSTANCE_NAME, HANA-DB-PRIVATE-IP-VS1, HANA-DB_HOSTNAME_1, HANA-DB_HOSTNAME_2, HANA_SID, HA_CLUSTER, REGION, and VPC.
+    In the output of the Schematics `Apply Plan` the Activity Tracker instance name, BUCKET_NAME, COS_INSTANCE_NAME, HANA-DB-PRIVATE-IP-VS1, HANA-DB-PRIVATE-IP-VS2, HANA-DB_HOSTNAME_1, HANA-DB_HOSTNAME_2, HANA_SID, HA_CLUSTER, REGION, and VPC will be displayed.
 
 ### 3.1 Related links:
 

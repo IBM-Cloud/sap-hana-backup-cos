@@ -15,19 +15,19 @@ output "HANA_SID" {
   value		= var.HANA_SID
 }
 
-output "HANA-DB_HOSTNAME_1" {
+output "HANA_DB_HOSTNAME_1" {
   value		= var.DB_HOSTNAME_1
 }
 
-output "HANA-DB-PRIVATE-IP-VSI1" {
+output "HANA_DB_PRIVATE_IP_VSI1" {
   value		= "${data.ibm_is_instance.db-vsi-1.primary_network_interface[0].primary_ip[0].address}"
 }
 
-output "HANA-DB_HOSTNAME_2" {
+output "HANA_DB_HOSTNAME_2" {
   value		= var.DB_HOSTNAME_2
 }
 
-output "HANA-DB-PRIVATE-IP-VSI2" {
+output "HANA_DB_PRIVATE_IP_VSI2" {
   value		= local.db-vsi-2
 }
 

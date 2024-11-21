@@ -15,60 +15,52 @@
   set_fact:
     tenants: "{{ hana_tenants.split(',') | list | upper }}"
 
-- name: Check for the unset backup parameters for SAP HANA SYSTEMDB
-  shell: su - {{ hana_sid|lower }}adm -c "hdbsql -d SYSTEMDB -u SYSTEM -p \"{{ hana_main_password }}\" -i {{ hana_sysno }} \"select key, value from M_CONFIGURATION_PARAMETER_VALUES where file_name = 'global.ini' and layer_name = 'SYSTEM' and section = 'backup' and key = '{{ p_system_un.key }}'\""
-  args:
-    warn: false
-  loop: "{{ backup_parameters | dict2items }}"
-  loop_control:
-    loop_var: p_system_un
-  register: systemdb_param_status
-  when: replication is not defined and backup_parameters is defined
-  changed_when: False
-  no_log: True
-
-- name: Gather the unset backup parameters for SAP HANA SYSTEMDB
-  set_fact:
-    systemdb_param_to_set: "{{ systemdb_param_to_set|default([]) + [systemdb_param_res.p_system_un] }}"
-  loop: "{{ systemdb_param_status.results | list }}"
-  loop_control:
-    loop_var: systemdb_param_res
-  when: 'replication is not defined and backup_parameters is defined and ("KEY,VALUE\n0 rows selected" in systemdb_param_res.stdout)'
-  no_log: True
-
-- name: Check the backup parameters where the values are not set as expected for SAP HANA SYSTEMDB
-  shell: su - {{ hana_sid|lower }}adm -c "hdbsql -d SYSTEMDB -u SYSTEM -p \"{{ hana_main_password }}\" -i {{ hana_sysno }} \"select key, value from M_CONFIGURATION_PARAMETER_VALUES where file_name = 'global.ini' and layer_name = 'SYSTEM' and section = 'backup' and key = '{{ p_system.key }}' and value != '{{ p_system.value }}'\""
+# Backup parameters for SYSTEMDB
+- name: Check the status of all backup parameters for SAP HANA SYSTEMDB
+  shell: |
+    export HISTCONTROL=ignorespace
+     su - {{ hana_sid|lower }}adm -c "hdbsql -d SYSTEMDB -u SYSTEM -p \"{{ hana_main_password }}\" -i {{ hana_sysno }} \"select key, value from M_CONFIGURATION_PARAMETER_VALUES where file_name = 'global.ini' and layer_name = 'SYSTEM' and section = 'backup' and key = '{{ p_system.key }}'  and value = '{{ p_system.value }}'\""
   args:
     warn: false
   loop: "{{ backup_parameters | dict2items }}"
   loop_control:
     loop_var: p_system
-  register: systemdb_param_difstatus
+  register: systemdb_param_status
   when: replication is not defined and backup_parameters is defined
   changed_when: False
   no_log: True
 
-- name: Gather the backup parameters where the values are not set as expected for SAP HANA SYSTEMDB
+- name: Create the list of parameters which are not set or are incorrectly set for SAP HANA SYSTEMDB backup in IBM Cloud Object Storage
   set_fact:
-    systemdb_param_to_set: "{{ systemdb_param_to_set|default([]) + [systemdb_param_res1.p_system] }}"
-  loop: "{{ systemdb_param_difstatus.results | list }}"
+    systemdb_param_to_set: "{{ systemdb_param_to_set|default([]) + [p_systemtoset.p_system] }}"
+  loop: "{{ systemdb_param_status.results | list }}"
   loop_control:
-    loop_var: systemdb_param_res1
-  when: 'replication is not defined and backup_parameters is defined and ("KEY,VALUE\n0 rows selected" not in systemdb_param_res1.stdout)'
+    loop_var: p_systemtoset
+  when: 'replication is not defined and systemdb_param_status is defined and ("KEY,VALUE\n0 rows selected" in p_systemtoset.stdout)'
   no_log: True
 
-- name: Update the parameters for SAP HANA SYSTEMDB in order to allow backup in IBM Cloud Object Storage
-  shell: su - {{ hana_sid|lower }}adm -c "hdbsql -d SYSTEMDB -u SYSTEM -p \"{{ hana_main_password }}\" -i {{ hana_sysno }} \"ALTER SYSTEM ALTER CONFIGURATION ('global.ini', 'SYSTEM') SET ('backup' , '{{ item_systemdb.key }}') = '{{ item_systemdb.value }}' WITH RECONFIGURE\""
+- name: Display the list of parameters to be set for SAP HANA SYSTEMDB backup in IBM Cloud Object Storage
+  debug:
+    var: systemdb_param_to_set
+  when: replication is not defined and systemdb_param_to_set is defined
+
+- name: Set the parameters for SAP HANA SYSTEMDB in order to enable the backup in IBM Cloud Object Storage
+  shell: |
+    export HISTCONTROL=ignorespace
+     su - {{ hana_sid|lower }}adm -c "hdbsql -d SYSTEMDB -u SYSTEM -p \"{{ hana_main_password }}\" -i {{ hana_sysno }} \"ALTER SYSTEM ALTER CONFIGURATION ('global.ini', 'SYSTEM') SET ('backup' , '{{ item_systemdb.key }}') = '{{ item_systemdb.value }}' WITH RECONFIGURE\""
   args:
     warn: false
   loop: "{{ systemdb_param_to_set | list }}"
   loop_control:
     loop_var: item_systemdb
-  when: replication is not defined and systemdb_param_to_set is defined
   no_log: True
+  when: replication is not defined and systemdb_param_to_set is defined
 
-- name: Check for the unset backup parameters for SAP HANA tenant databases
-  shell: su - {{ hana_sid|lower }}adm -c "hdbsql -d {{ item.0 }} -u SYSTEM -p \"{{ hana_main_password }}\" -i {{ hana_sysno }} \"select key, value from M_CONFIGURATION_PARAMETER_VALUES where file_name = 'global.ini' and layer_name = 'DATABASE' and section = 'backup' and key = '{{ item.1.key }}'\""
+# Backup parameters for tenant databases
+- name: Check the status of all backup parameters for all SAP HANA tenant databases
+  shell: |
+    export HISTCONTROL=ignorespace
+     su - {{ hana_sid|lower }}adm -c "hdbsql -d {{ item.0 }} -u SYSTEM -p \"{{ hana_main_password }}\" -i {{ hana_sysno }} \"select key, value from M_CONFIGURATION_PARAMETER_VALUES where file_name = 'global.ini' and layer_name = 'DATABASE' and section = 'backup' and key = '{{ item.1.key }}' and value != '{{ item.1.value }}'\""
   args:
     warn: false
   with_nested:
@@ -79,38 +71,24 @@
   changed_when: False
   no_log: True
 
-- name: Gather the unset backup parameters for SAP HANA tenant databases
+- name: Create the list of parameters which are not set or are incorrectly set all SAP HANA tenant databases backup in IBM Cloud Object Storage
   set_fact:
     tenant_param_to_set: "{{ tenant_param_to_set|default([]) + [tenant_param_res.item] }}"
   loop: "{{ tenant_param_status.results | list }}"
   loop_control:
     loop_var: tenant_param_res
-  when: 'replication is not defined and backup_parameters is defined and ("KEY,VALUE\n0 rows selected" in tenant_param_res.stdout)'
+  when: 'replication is not defined and tenant_param_status is defined and ("KEY,VALUE\n0 rows selected" in tenant_param_res.stdout)'
   no_log: True
 
-- name: Check the backup parameters where the values are not set as expected for SAP HANA tenant databases
-  shell: su - {{ hana_sid|lower }}adm -c "hdbsql -d {{ item.0 }} -u SYSTEM -p \"{{ hana_main_password }}\" -i {{ hana_sysno }} \"select key, value from M_CONFIGURATION_PARAMETER_VALUES where file_name = 'global.ini' and layer_name = 'DATABASE' and section = 'backup' and key = '{{ item.1.key }}' and value != '{{ item.1.value }}'\""
-  args:
-    warn: false
-  with_nested:
-    - "{{ tenants | list }}"
-    - "{{ backup_parameters | dict2items }}"
-  when: replication is not defined and backup_parameters is defined and tenants is defined
-  register: tenant_param_difstatus
-  changed_when: False
-  no_log: True
-
-- name: Gather the backup parameters where the values are not set as expected for SAP HANA tenant databases
-  set_fact:
-    tenant_param_to_set: "{{ tenant_param_to_set|default([]) + [tenant_param_res.item] }}"
-  loop: "{{ tenant_param_difstatus.results | list }}"
-  loop_control:
-    loop_var: tenant_param_res
-  when: 'replication is not defined and backup_parameters is defined and ("KEY,VALUE\n0 rows selected" not in tenant_param_res.stdout)'
-  no_log: True
+- name: Display the list of parameters to be set for SAP HANA tenant databases backup in IBM Cloud Object Storage
+  debug:
+    var: tenant_param_to_set
+  when: replication is not defined and tenant_param_to_set is defined
 
 - name: Update the parameters for SAP HANA tenant databases in order to allow backup in IBM Cloud Object Storage
-  shell: su - {{ hana_sid|lower }}adm -c "hdbsql -d {{ item_tenant.0 }} -u SYSTEM -p \"{{ hana_main_password }}\" -i {{ hana_sysno }} \"ALTER SYSTEM ALTER CONFIGURATION ('global.ini', 'DATABASE') SET ('backup' , '{{ item_tenant.1.key }}') = '{{ item_tenant.1.value }}' WITH RECONFIGURE\""
+  shell: |
+    export HISTCONTROL=ignorespace
+     su - {{ hana_sid|lower }}adm -c "hdbsql -d {{ item_tenant.0 }} -u SYSTEM -p \"{{ hana_main_password }}\" -i {{ hana_sysno }} \"ALTER SYSTEM ALTER CONFIGURATION ('global.ini', 'DATABASE') SET ('backup' , '{{ item_tenant.1.key }}') = '{{ item_tenant.1.value }}' WITH RECONFIGURE\""
   args:
     warn: false
   loop: "{{ tenant_param_to_set | list }}"
@@ -119,6 +97,7 @@
   when: replication is not defined and tenant_param_to_set is defined
   no_log: True
 
+# In case replication is on
 - name: The list of SAP HANA configuration files for tenant databases for the secondary system, in case replication is on
   set_fact:
     cfg_files_tenant: "{{ cfg_files_tenant|default([]) + ['/hana/shared/' ~ hana_sid|upper ~ '/global/hdb/custom/config/DB_' + ten_name + '/global.ini'] }}"

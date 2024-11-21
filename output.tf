@@ -38,8 +38,3 @@ output "COS_INSTANCE_NAME" {
 output "BUCKET_NAME" {
   value = "${local.hana_sid}-hana-backup-bucket"
 }
-
-output "ATR_INSTANCE_NAME" {
-  description = "Activity Tracker instance name."
-    value       = var.ATR_NAME
-}

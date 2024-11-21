@@ -37,14 +37,6 @@ LIFECYCLE_POLICY = ""
 # Example: LIFECYCLE_POLICY = "120"
 
 ##########################################################
-# Activity Tracker variables:
-##########################################################
-
-ATR_NAME = ""
-# The name of the EXISTING Activity Tracker instance, in the same region as HANA VSI and COS. The list of available Activity Tracker is available here: https://cloud.ibm.com/observe/activitytracker
-# Example: ATR_NAME="Activity-Tracker-SAP-eu-de"
-
-##########################################################
 # HANA VSI variables:
 ##########################################################
 

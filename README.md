@@ -3,8 +3,6 @@
 ## Description
 This automation solution is designed for the implementation of an SAP HANA Backup solution using Backint and [**IBM Cloud Object Storage**](https://cloud.ibm.com/docs/cloud-object-storage?topic=cloud-object-storage-getting-started-cloud-object-storage). It is based on SAP note "2935898 - Install and Configure SAP HANA Backint Agent for Amazon S3".  
 
-In order to track the events specific to the resources deployed by this solution, the [IBM Cloud Activity Tracker](https://cloud.ibm.com/docs/activity-tracker?topic=activity-tracker-getting-started#gs_ov) to be used should be specified. IBM Cloud Activity Tracker service collects and stores audit records for API calls made to resources that run in the IBM Cloud. It can be used to monitor the activity of your IBM Cloud account, investigate abnormal activity and critical actions, and comply with regulatory audit requirements. In addition, you can be alerted on actions as they happen.
-
 The minimum version of SAP HANA Backint Agent for Amazon S3, to be used for IBM COS, is 1.2.17. "SAP HANA Backint Agent for Amazon S3" requires Python3.7, including SSL support. The Python package delivered as part of the SAP HANA 2 installation does not include SSL support, so Python 3.7 with SSL support will be installed in addition in `/usr/local/bin` directory, in case it isn't previously installed. SAP HANA Backint Agent for Amazon S3 will be installed in `/hana/shared/<SID>/backint_agent` directory.
 
 The setup runs just onetime initial full data backup to COS for SYSTEM and TENANT databases. The regular backup policy for the databases must be configured by the customer!
@@ -56,7 +54,7 @@ See:
  - `ansible` - directory containing the Ansible playbooks used to install the necessary packages, make the backup configuration and execute the initial data backup.
  - `main.tf` - contains the configuration of the VSI for the deployment of the current SAP solution.
  - `data.tf` - it contains tf data from cloud resources
- - `output.tf` - contains the code for the information to be displayed after the SAP HANA Backup solution is deployed.  (Activity Tracker instance name, BUCKET_NAME, COS_INSTANCE_NAME,  Private IP, Hostname, HANA_SID, HA_CLUSTER, REGION, VPC).
+ - `output.tf` - contains the code for the information to be displayed after the SAP HANA Backup solution is deployed.  (BUCKET_NAME, COS_INSTANCE_NAME,  Private IP, Hostname, HANA_SID, HA_CLUSTER, REGION, VPC).
  - `integration*.tf & generate*.tf` files - contain the integration code that makes the SAP variables from Terraform available to Ansible.
  - `provider.tf` - contains the IBM Cloud Provider data in order to run `terraform init` command.
  - `variables.tf` - contains variables for the VPC and VSI.
@@ -78,7 +76,7 @@ You can create an API Key [here](https://cloud.ibm.com/iam/apikeys).
 
 ### Input parameter file
 The solution is configured by asigning the appropriate values to the variables in `input.auto.tfvars` file.
-Edit the file `input.auto.tfvars` and asign the appropriate values for: VPC, REGION, SUBNET, SECURITY_GROUP, RESOURCE_GROUP, ID_RSA_FILE_PATH, LIFECYCLE_POLICY, ATR_NAME, DB_HOSTNAME_1, DB_HOSTNAME_2, HA_CLUSTER as in the following example:
+Edit the file `input.auto.tfvars` and asign the appropriate values for: VPC, REGION, SUBNET, SECURITY_GROUP, RESOURCE_GROUP, ID_RSA_FILE_PATH, LIFECYCLE_POLICY, DB_HOSTNAME_1, DB_HOSTNAME_2, HA_CLUSTER as in the following example:
 
 **IBM Cloud input parameters**
 
@@ -122,14 +120,6 @@ LIFECYCLE_POLICY = "120"
 # Example: LIFECYCLE_POLICY = "120"
 
 ##########################################################
-# Activity Tracker variables:
-##########################################################
-
-ATR_NAME = "Activity-Tracker-SAP-eu-de"
-# The name of the EXISTING Activity Tracker instance, in the same region as HANA VSI and COS. The list of available Activity Tracker is available here: https://cloud.ibm.com/observe/activitytracker
-# Example: ATR_NAME="Activity-Tracker-SAP-eu-de"
-
-##########################################################
 # HANA VSI variables:
 ##########################################################
 
@@ -159,7 +149,6 @@ RESOURCE_GROUP | EXISTING Resource Group, the same as for HANA VSI. The list of 
 SUBNET | EXISTING Subnet, same as for HANA VSI. The list of Subnets is available [here](https://cloud.ibm.com/vpc-ext/network/subnets).
 ID_RSA_FILE_PATH | The file path for PRIVATE_SSH_KEY will be automatically generated. If it is changed, it must contain the relative path to git repository folders. <br /> Default value: "ansible/id_rsa".
 LIFECYCLE_POLICY | The number of retention days for HANA Database backup and Transaction LOG backup.
-ATR_NAME | The name of the EXISTING Activity Tracker instance, in the same region as HANA VSI. The list of available Activity Tracker is available [here](https://cloud.ibm.com/observe/activitytracker)
 HA_CLUSTER | Specifies if High Availability is configured for HANA Database. Accepted values: yes/no. For the value "no" it is required that only one variable to be filled in: DB_HOSTNAME_1. For the value "yes" it is required that both next variables to be filled in: DB_HOSTNAME_1, DB_HOSTNAME_2
 DB_HOSTNAME_1 | The Hostname of an EXISTING HANA VSI. Required. If High Availability is configured for HANA Database should be the hostname of HANA DB VSI 1. The hostname should be up to 13 characters as required by SAP. For more information on rules regarding hostnames for SAP systems, check [SAP Note 611361: Hostnames of SAP ABAP Platform servers](https://launchpad.support.sap.com/#/notes/%20611361) 
 DB_HOSTNAME_2 | The Hostname of an EXISTING HANA VSI 2. Required only if High Availability is configured for HANA Database. The hostname should be up to 13 characters as required by SAP. For more information on rules regarding hostnames for SAP systems, check [SAP Note 611361: Hostnames of SAP ABAP Platform servers](https://launchpad.support.sap.com/#/notes/%20611361)
@@ -316,7 +305,7 @@ The IBM Cloud API Key should be provided as input value of type sensitive for "I
 The IBM Cloud API Key can be created [here](https://cloud.ibm.com/iam/apikeys).
 
 ### Input parameters
-The following parameters can be set in the Schematics workspace: VPC, REGION, SUBNET, SECURITY_GROUP, RESOURCE_GROUP, ID_RSA_FILE_PATH, LIFECYCLE_POLICY, ATR_NAME, DB_HOSTNAME_1, DB_HOSTNAME_2, HA_CLUSTER and the SAP system configuration variables, as below:
+The following parameters can be set in the Schematics workspace: VPC, REGION, SUBNET, SECURITY_GROUP, RESOURCE_GROUP, ID_RSA_FILE_PATH, LIFECYCLE_POLICY, DB_HOSTNAME_1, DB_HOSTNAME_2, HA_CLUSTER and the SAP system configuration variables, as below:
 
 **IBM Cloud input parameters:**
 
@@ -332,7 +321,6 @@ SECURITY_GROUP | EXISTING Security group, same as for HANA VSI. The list of Secu
 RESOURCE_GROUP | EXISTING Resource Group, the same as for HANA VSI. The list of Resource Groups is available  [here](https://cloud.ibm.com/account/resource-groups). <br /> Default value: "Default".
 SUBNET | EXISTING Subnet, same as for HANA VSI. The list of Subnets is available [here](https://cloud.ibm.com/vpc-ext/network/subnets).
 LIFECYCLE_POLICY | The number of retention days for HANA Database backup and Transaction LOG backup.
-ATR_NAME | The name of the EXISTING Activity Tracker instance, in the same region as HANA VSI. The list of available Activity Tracker is available [here](https://cloud.ibm.com/observe/activitytracker)
 HA_CLUSTER | Specifies if High Availability is configured for HANA Database. Accepted values: yes/no. For the value "no" it is required that only one variable to be filled in: DB_HOSTNAME_1. For the value "yes" it is required that both next variables to be filled in: DB_HOSTNAME_1, DB_HOSTNAME_2
 DB_HOSTNAME_1 | The Hostname of an EXISTING HANA VSI. Required. If High Availability is configured for HANA Database should be the hostname of HANA DB VSI 1. The hostname should be up to 13 characters as required by SAP. For more information on rules regarding hostnames for SAP systems, check [SAP Note 611361: Hostnames of SAP ABAP Platform servers](https://launchpad.support.sap.com/#/notes/%20611361) 
 DB_HOSTNAME_2 | The Hostname of an EXISTING HANA VSI 2. Required only if High Availability is configured for HANA Database. The hostname should be up to 13 characters as required by SAP. For more information on rules regarding hostnames for SAP systems, check [SAP Note 611361: Hostnames of SAP ABAP Platform servers](https://launchpad.support.sap.com/#/notes/%20611361)
@@ -383,7 +371,7 @@ HANA_MAIN_PASSWORD | HANA system master password. The HANA DB SYSTEM user should
 7.  Review the logs to ensure that no errors occurred during the
     provisioning, modification, or deletion process.
 
-    In the output of the Schematics `Apply Plan` the Activity Tracker instance name, BUCKET_NAME, COS_INSTANCE_NAME, HANA-DB-PRIVATE-IP-VS1, HANA-DB-PRIVATE-IP-VS2, HANA-DB_HOSTNAME_1, HANA-DB_HOSTNAME_2, HANA_SID, HA_CLUSTER, REGION, and VPC will be displayed.
+    In the output of the Schematics `Apply Plan` BUCKET_NAME, COS_INSTANCE_NAME, HANA-DB-PRIVATE-IP-VS1, HANA-DB-PRIVATE-IP-VS2, HANA-DB_HOSTNAME_1, HANA-DB_HOSTNAME_2, HANA_SID, HA_CLUSTER, REGION, and VPC will be displayed.
 
 ### 3.1 Related links:
 
@@ -391,4 +379,3 @@ HANA_MAIN_PASSWORD | HANA system master password. The HANA DB SYSTEM user should
 - [Securely Access Remote Instances with a Bastion Host](https://www.ibm.com/cloud/blog/tutorial-securely-access-remote-instances-with-a-bastion-host)
 - [VPNs for VPC overview: Site-to-site gateways and Client-to-site servers.](https://cloud.ibm.com/docs/vpc?topic=vpc-vpn-overview)
 - [IBM Cloud Schematics](https://www.ibm.com/cloud/schematics)
-- [IBM Cloud Activity Tracker](https://cloud.ibm.com/docs/activity-tracker?topic=activity-tracker-getting-started#gs_ov)

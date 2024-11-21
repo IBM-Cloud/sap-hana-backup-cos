@@ -34,8 +34,6 @@ module "cos" {
   HANA_SID = local.hana_sid
   BUCKET_NAME = "${local.hana_sid}-hana-backup-bucket"
   LIFECYCLE_POLICY = var.LIFECYCLE_POLICY
-  ATR_NAME = var.ATR_NAME
-  ATR_ENABLE = local.ATR_ENABLE
 }
 
 module "cos_clean_up" {

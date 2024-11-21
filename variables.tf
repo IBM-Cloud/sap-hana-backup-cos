@@ -32,10 +32,10 @@ variable "RESOURCE_GROUP" {
 
 variable "REGION" {
 	type		= string
-	description	= "The cloud region where HANA VSI was deployed. The COS will be created in the same region as HANA VSI. The regions and zones for VPC are available here: https://cloud.ibm.com/docs/containers?topic=containers-regions-and-zones#zones-vpc. Review supported locations in IBM Cloud Schematics here: https://cloud.ibm.com/docs/schematics?topic=schematics-locations. Activity Tracker regions are listed here: https://cloud.ibm.com/docs/activity-tracker?topic=activity-tracker-regions"
+	description	= "The cloud region where HANA VSI was deployed. The COS will be created in the same region as HANA VSI. The regions and zones for VPC are available here: https://cloud.ibm.com/docs/containers?topic=containers-regions-and-zones#zones-vpc. Review supported locations in IBM Cloud Schematics here: https://cloud.ibm.com/docs/schematics?topic=schematics-locations."
 	validation {
-		condition     = contains(["au-syd", "jp-osa", "jp-tok", "eu-de", "eu-gb", "ca-tor", "us-south", "us-east", "br-sao"], var.REGION )
-		error_message = "For CLI deployments, the REGION must be one of: au-syd, jp-osa, jp-tok, eu-de, eu-gb, ca-tor, us-south, us-east, br-sao. \n For Schematics, the REGION must be one of: eu-de, eu-gb, us-south, us-east."
+		condition     = contains(["eu-de", "eu-gb", "us-south", "us-east", "ca-tor", "au-syd", "jp-osa", "jp-tok", "eu-es", "br-sao"], var.REGION )
+		error_message = "The REGION must be one of: eu-de, eu-gb, us-south, us-east, ca-tor, au-syd, jp-osa, jp-tok, eu-es, br-sao."
 	}
 }
 
@@ -97,16 +97,6 @@ variable "LIFECYCLE_POLICY" {
 	type		= string
 	description = "The number of retention days for HANA Database backup and Transaction LOG backup."
 	nullable = false
-}
-
-##############################################################
-# The variables used in Activity Tracker service.
-##############################################################
-
-variable "ATR_NAME" {
-  type        = string
-  description = "The name of the EXISTING Activity Tracker instance, in the same region as HANA VSI. The list of available Activity Tracker is available here: https://cloud.ibm.com/observe/activitytracker"
-  default     = ""
 }
 
 ##############################################################
@@ -187,25 +177,4 @@ resource "null_resource" "check_bk_agent_kit_vars" {
       error_message = "The path for the kit for SAP HANA backint agent or the path for a SAP HANA kit file to be used to extract the SAP HANA backint agent should be provided."
     }
   }
-}
-
-locals {
-	ATR_ENABLE = true
-}
-
-resource "null_resource" "check_atr_name" {
-  count             = local.ATR_ENABLE == true ? 1 : 0
-  lifecycle {
-    precondition {
-      condition     = var.ATR_NAME != "" && var.ATR_NAME != null
-      error_message = "The name of an EXISTENT Activity Tracker in the same region must be specified."
-    }
-  }
-}
-
-data "ibm_resource_instance" "activity_tracker" {
-  count             = local.ATR_ENABLE == true ? 1 : 0
-  name              = var.ATR_NAME
-  location          = var.REGION
-  service           = "logdnaat"
 }

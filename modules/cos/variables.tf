@@ -29,14 +29,3 @@ variable "BUCKET_NAME" {
 	description = "BUCKET_NAME"
 }
 
-
-variable "ATR_NAME" {
-  description = "Activity Tracker Enter the instance name "
-  type        = string
-}
-
-variable "ATR_ENABLE" {
-  description = "Enable Activity Tracker usage"
-  type        = bool
-}
-
